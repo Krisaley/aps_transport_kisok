@@ -54,6 +54,6 @@ class MovementWorkflowTest extends TestCase
         $s = Site::create(['name' => 'Yard', 'address_line_1' => 'Road', 'postcode' => 'PE1', 'address_code' => 'YARD3']);
         $m = $this->movement($u, $c, $s);
         $this->expectException(ValidationException::class);
-        app(MovementWorkflow::class)->transition($m,MovementStatus::Completed,$u);
+        app(MovementWorkflow::class)->transition($m, MovementStatus::Completed, $u);
     }
 }
