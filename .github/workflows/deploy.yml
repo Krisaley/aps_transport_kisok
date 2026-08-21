@@ -12,4 +12,9 @@ jobs:
         with: {ssh-private-key: '${{ secrets.DEPLOY_SSH_KEY }}'}
       - run: ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
       - run: rsync -az --delete --exclude .env --exclude backups --exclude .deploy ./ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/"
-      - run: ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "cd '${{ secrets.DEPLOY_PATH }}' && APP_IMAGE=ghcr.io/${{ github.repository_owner }}/aps-transport-app WEB_IMAGE=ghcr.io/${{ github.repository_owner }}/aps-transport-web RELEASE_TAG='${{ inputs.release }}' sh scripts/deploy.sh"
+      - name: Deploy release
+        shell: bash
+        run: |
+          registry_owner='${{ github.repository_owner }}'
+          registry_owner="${registry_owner,,}"
+          ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "cd '${{ secrets.DEPLOY_PATH }}' && APP_IMAGE=ghcr.io/${registry_owner}/aps-transport-app WEB_IMAGE=ghcr.io/${registry_owner}/aps-transport-web RELEASE_TAG='${{ inputs.release }}' sh scripts/deploy.sh"
