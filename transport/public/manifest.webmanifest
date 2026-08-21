@@ -1,0 +1,12 @@
+{
+  "name": "APS Transport Mobile",
+  "short_name": "Transport",
+  "start_url": "/pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#0f172a",
+  "icons": [
+    {"src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png"}
+  ]
+}

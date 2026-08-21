@@ -1,0 +1,59 @@
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.key
+*.pem
+auth.json
+
+# Local Docker Compose customisation and runtime data
+compose.override.yml
+compose.override.yaml
+docker-compose.override.yml
+docker-compose.override.yaml
+.docker/
+docker/data/
+docker/secrets/
+volumes/
+backups/
+
+# Application dependencies and generated frontend assets
+transport/vendor/
+transport/node_modules/
+transport/public/build/
+transport/public/hot
+transport/public/storage
+
+# Application runtime and generated business files
+transport/storage/*.key
+transport/storage/pail/
+transport/storage/app/documents/
+transport/storage/app/uploads/
+transport/database/*.sqlite*
+*.sql
+*.sql.gz
+
+# Test and tool caches
+.phpunit.cache/
+.phpunit.result.cache
+.phpactor.json
+.pint.cache
+coverage/
+
+# Editors and operating systems
+.idea/
+.nova/
+.vscode/
+.zed/
+.cursor/
+.codex/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.log
+*.tmp
+*.swp
+*~

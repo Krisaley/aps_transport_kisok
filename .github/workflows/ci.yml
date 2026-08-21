@@ -1,0 +1,31 @@
+name: CI
+on: {pull_request: {}, push: {branches: [main]}}
+permissions: {contents: read}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: transport}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with: {php-version: '8.4', coverage: none}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24', cache: npm, cache-dependency-path: transport/package-lock.json}
+      - run: composer install --no-interaction --prefer-dist
+        env: {COMPOSER_AUTH: '${{ secrets.COMPOSER_AUTH }}'}
+      - run: cp .env.example .env && php artisan key:generate
+      - run: npm ci && npm run build
+      - run: composer test
+      - run: php artisan view:cache
+  image:
+    needs: test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions: {contents: read, packages: write}
+    strategy: {matrix: {target: [app, web]}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with: {registry: ghcr.io, username: '${{ github.actor }}', password: '${{ secrets.GITHUB_TOKEN }}'}
+      - uses: docker/build-push-action@v6
+        with: {context: ., target: '${{ matrix.target }}', push: true, tags: 'ghcr.io/${{ github.repository_owner }}/aps-transport-${{ matrix.target }}:${{ github.sha }}', secrets: 'composer_auth=${{ secrets.COMPOSER_AUTH }}'}

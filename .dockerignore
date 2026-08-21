@@ -1,0 +1,11 @@
+.git
+.github
+.env
+backups
+transport/vendor
+transport/node_modules
+transport/storage/logs/*
+transport/storage/framework/*
+transport/bootstrap/cache/*.php
+transport/public/hot
+transport/tests

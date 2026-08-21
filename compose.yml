@@ -1,0 +1,65 @@
+name: aps-transport
+services:
+  app: &app
+    image: ${APP_IMAGE:-aps-transport-app}:${RELEASE_TAG:-local}
+    build: {context: ., target: app}
+    env_file:
+      - path: ${ENV_FILE:-.env}
+        required: false
+    restart: unless-stopped
+    volumes: [transport-storage:/var/www/html/storage]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    networks: [internal]
+  queue:
+    <<: *app
+    command: php artisan queue:work --sleep=2 --tries=3 --timeout=120
+    healthcheck: {disable: true}
+  scheduler:
+    <<: *app
+    command: php artisan schedule:work
+    healthcheck: {disable: true}
+  web:
+    image: ${WEB_IMAGE:-aps-transport-web}:${RELEASE_TAG:-local}
+    build: {context: ., target: web}
+    restart: unless-stopped
+    ports: ["${HTTP_BIND:-127.0.0.1}:${HTTP_PORT:-8080}:8080"]
+    depends_on: [app]
+    networks: [internal, edge]
+    healthcheck: {test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/up >/dev/null || exit 1"], interval: 15s, timeout: 5s, retries: 8}
+  postgres:
+    image: postgres:17-bookworm
+    env_file:
+      - path: ${ENV_FILE:-.env}
+        required: false
+    restart: unless-stopped
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    networks: [internal]
+    healthcheck: {test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"], interval: 10s, timeout: 5s, retries: 10}
+  redis:
+    image: redis:8-alpine
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    restart: unless-stopped
+    volumes: [redis-data:/data]
+    networks: [internal]
+    healthcheck: {test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping | grep PONG"], interval: 10s, timeout: 5s, retries: 10}
+  backup:
+    image: postgres:17-bookworm
+    env_file:
+      - path: ${ENV_FILE:-.env}
+        required: false
+    restart: unless-stopped
+    volumes: [./backups:/backups, ./docker/backup/backup.sh:/backup.sh:ro]
+    entrypoint: ["/bin/sh", "/backup.sh"]
+    depends_on: [postgres]
+    networks: [internal]
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    restart: unless-stopped
+    depends_on: [web]
+    networks: [edge]
+    profiles: [cloudflare]
+volumes: {postgres-data: {}, redis-data: {}, transport-storage: {}}
+networks: {internal: {internal: true}, edge: {}}
