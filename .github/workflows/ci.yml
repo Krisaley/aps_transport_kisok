@@ -11,8 +11,12 @@ jobs:
         with: {php-version: '8.4', coverage: none}
       - uses: actions/setup-node@v4
         with: {node-version: '24', cache: npm, cache-dependency-path: transport/package-lock.json}
+      # - run: composer install --no-interaction --prefer-dist
+        # env: {COMPOSER_AUTH: '${{ secrets.COMPOSER_AUTH }}'}
+      - name: Configure Flux Pro authentication
+        run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
       - run: composer install --no-interaction --prefer-dist
-        env: {COMPOSER_AUTH: '${{ secrets.COMPOSER_AUTH }}'}
+      # added above
       - run: cp .env.example .env && php artisan key:generate
       - run: npm ci && npm run build
       - run: composer test
