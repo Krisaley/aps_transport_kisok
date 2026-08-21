@@ -13,7 +13,7 @@ COPY --from=vendor /src/vendor vendor
 RUN npm run build
 
 FROM php:8.4-fpm-bookworm AS app
-RUN apt-get update && apt-get install -y --no-install-recommends libicu-dev libpq-dev libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev unzip curl && docker-php-ext-configure gd --with-freetype --with-jpeg && docker-php-ext-install -j$(nproc) bcmath exif gd intl opcache pcntl pdo_pgsql zip && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends libicu-dev libpq-dev libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev unzip curl && docker-php-ext-configure gd --with-freetype --with-jpeg && docker-php-ext-install -j$(nproc) bcmath exif gd intl opcache pcntl pdo_pgsql zip && pecl install redis-6.3.0 && docker-php-ext-enable redis && rm -rf /var/lib/apt/lists/*
 WORKDIR /var/www/html
 COPY transport/ .
 COPY --from=vendor /src/vendor vendor
