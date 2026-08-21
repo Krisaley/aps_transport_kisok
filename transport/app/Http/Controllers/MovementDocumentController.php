@@ -19,7 +19,7 @@ class MovementDocumentController extends Controller
         abort_unless($r->user()->canAccessCompany((int) $movement->company_id), 403);
         abort_unless(in_array($type, MovementDocumentService::TYPES, true), 404);
 
-        return view('documents.movement', ['movement' => $movement->load(['company', 'customer', 'actions.site', 'actions.driver', 'actions.vehicle', 'items.accessories', 'photos']), 'type' => $type]);
+        return view('documents.movement', ['movement' => $movement->load(['company', 'customer', 'actions.site', 'actions.driver', 'actions.vehicle', 'items.accessories', 'items.collectionAction.site', 'items.deliveryAction.site', 'photos']), 'type' => $type]);
     }
 
     public function issue(Request $r, Movement $movement, string $type, MovementDocumentService $service): RedirectResponse

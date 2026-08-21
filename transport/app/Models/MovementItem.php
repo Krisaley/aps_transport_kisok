@@ -14,6 +14,8 @@ class MovementItem extends Model
     protected $fillable = [
         'movement_id',
         'movement_action_id',
+        'collection_action_id',
+        'delivery_action_id',
         'equipment_id',
         'stock_number',
         'make',
@@ -40,6 +42,16 @@ class MovementItem extends Model
     public function action(): BelongsTo
     {
         return $this->belongsTo(MovementAction::class, 'movement_action_id');
+    }
+
+    public function collectionAction(): BelongsTo
+    {
+        return $this->belongsTo(MovementAction::class, 'collection_action_id');
+    }
+
+    public function deliveryAction(): BelongsTo
+    {
+        return $this->belongsTo(MovementAction::class, 'delivery_action_id');
     }
 
     /** @return BelongsTo<Movement, $this> */

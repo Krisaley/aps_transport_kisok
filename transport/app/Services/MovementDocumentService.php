@@ -17,7 +17,7 @@ class MovementDocumentService
     public function issue(Movement $movement, string $type, User $user): MovementDocument
     {
         abort_unless(in_array($type, self::TYPES, true), 404);
-        $movement->load(['company', 'customer', 'actions.site', 'actions.driver', 'actions.vehicle', 'items.accessories', 'photos']);
+        $movement->load(['company', 'customer', 'actions.site', 'actions.driver', 'actions.vehicle', 'items.accessories', 'items.collectionAction.site', 'items.deliveryAction.site', 'photos']);
         $html = view('documents.movement', ['movement' => $movement, 'type' => $type])->render();
         $options = new Options;
         $options->set('isRemoteEnabled', false);

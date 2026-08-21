@@ -56,7 +56,7 @@ class MovementWorkflow
 
     public function validateSchedule(Movement $movement): void
     {
-        $movement->loadMissing('actions');
+        $movement->loadMissing(['actions', 'items.collectionAction', 'items.deliveryAction']);
 
         if ($movement->actions->isEmpty()) {
             throw ValidationException::withMessages(['actions' => 'At least one movement action is required before scheduling.']);
@@ -70,6 +70,33 @@ class MovementWorkflow
                 throw ValidationException::withMessages(['schedule' => 'An action must end after it starts.']);
             }
             $this->assertNoConflict($action);
+        }
+
+        if ($movement->items->isEmpty()) {
+            throw ValidationException::withMessages(['items' => 'At least one machine is required before scheduling.']);
+        }
+
+        $usedActionIds = [];
+        foreach ($movement->items as $item) {
+            $collection = $item->collectionAction;
+            $delivery = $item->deliveryAction;
+
+            if (! $collection || $collection->movement_id !== $movement->id || $collection->action_type->value !== 'collection') {
+                throw ValidationException::withMessages(['items' => "{$item->description} requires a valid collection action."]);
+            }
+            if (! $delivery || $delivery->movement_id !== $movement->id || $delivery->action_type->value !== 'delivery') {
+                throw ValidationException::withMessages(['items' => "{$item->description} requires a valid delivery action."]);
+            }
+            if ($delivery->sequence <= $collection->sequence) {
+                throw ValidationException::withMessages(['items' => "{$item->description} must be delivered after it is collected."]);
+            }
+
+            $usedActionIds[$collection->id] = true;
+            $usedActionIds[$delivery->id] = true;
+        }
+
+        if ($movement->actions->contains(fn ($action) => ! isset($usedActionIds[$action->id]))) {
+            throw ValidationException::withMessages(['actions' => 'Every route action must collect or deliver at least one machine.']);
         }
     }
 
