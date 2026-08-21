@@ -10,6 +10,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
+ * @property int $id
+ * @property int $movement_id
+ * @property int $sequence
+ * @property MovementActionType $action_type
  * @property int|null $site_id
  * @property Carbon|null $schedule_start
  * @property Carbon|null $schedule_end
