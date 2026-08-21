@@ -9,7 +9,7 @@ use Spatie\Permission\Models\Permission;
 class PermissionSeeder extends Seeder
 {
     use WithoutModelEvents;
-    
+
     /**
      * Run the database seeds.
      */
@@ -20,11 +20,11 @@ class PermissionSeeder extends Seeder
             'admin.user.create',
             'admin.user.update',
             'admin.user.delete',
-            
+
             'admin.role.create',
             'admin.role.update',
             'admin.role.delete',
-            
+
             'admin.conf.update',
             'admin.company.update',
 
@@ -34,23 +34,23 @@ class PermissionSeeder extends Seeder
             'setup.customer.create',
             'setup.customer.update',
             'setup.customer.delete',
-            
+
             'setup.site.create',
             'setup.site.update',
             'setup.site.delete',
-            
+
             'setup.equipment.create',
             'setup.equipment.update',
             'setup.equipment.delete',
-            
+
             'setup.vehicle.create',
             'setup.vehicle.update',
             'setup.vehicle.delete',
-            
+
             'setup.make.create',
             'setup.make.update',
             'setup.make.delete',
-            
+
             'setup.model.create',
             'setup.model.update',
             'setup.model.delete',
@@ -72,11 +72,10 @@ class PermissionSeeder extends Seeder
             'pwa.yard_receipt',
         ];
 
-        foreach ($permissions as $permission)
-            {
-                Permission::updateOrCreate([
-                    'name' => $permission,
-                ]);
-            }
+        foreach ($permissions as $permission) {
+            Permission::updateOrCreate([
+                'name' => $permission,
+            ]);
+        }
     }
 }

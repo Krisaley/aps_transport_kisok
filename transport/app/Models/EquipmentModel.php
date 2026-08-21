@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
+use App\Concerns\HasActivityLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Concerns\HasActivityLog;
 
 class EquipmentModel extends Model
 {
     use HasActivityLog;
-    
+
     protected $table = 'models';
 
     protected $fillable = [

@@ -23,9 +23,28 @@ class MovementAction extends Model
         ];
     }
 
-    public function movement(): BelongsTo { return $this->belongsTo(Movement::class); }
-    public function site(): BelongsTo { return $this->belongsTo(Site::class); }
-    public function driver(): BelongsTo { return $this->belongsTo(User::class, 'driver_id'); }
-    public function vehicle(): BelongsTo { return $this->belongsTo(Vehicle::class); }
-    public function items(): HasMany { return $this->hasMany(MovementItem::class); }
+    public function movement(): BelongsTo
+    {
+        return $this->belongsTo(Movement::class);
+    }
+
+    public function site(): BelongsTo
+    {
+        return $this->belongsTo(Site::class);
+    }
+
+    public function driver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'driver_id');
+    }
+
+    public function vehicle(): BelongsTo
+    {
+        return $this->belongsTo(Vehicle::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(MovementItem::class);
+    }
 }

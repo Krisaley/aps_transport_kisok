@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use App\Concerns\HasActivityLog;
 use App\Enums\MovementStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Concerns\HasActivityLog;
 
 class Movement extends Model
 {
@@ -53,7 +53,10 @@ class Movement extends Model
         ];
     }
 
-    public function company(): BelongsTo { return $this->belongsTo(Company::class); }
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
 
     public function actions(): HasMany
     {

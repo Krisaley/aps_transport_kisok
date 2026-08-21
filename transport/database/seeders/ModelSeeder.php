@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 class ModelSeeder extends Seeder
 {
     use WithoutModelEvents;
-    
+
     /**
      * Run the database seeds.
      */

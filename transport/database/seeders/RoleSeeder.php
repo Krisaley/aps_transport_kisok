@@ -5,22 +5,23 @@ namespace Database\Seeders;
 use App\Models\Role;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
 
 class RoleSeeder extends Seeder
 {
     use WithoutModelEvents;
-    
+
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
         $super_admin = Role::updateOrCreate([
-            'name'  => 'Super-Admin',
+            'name' => 'Super-Admin',
         ]);
 
         $global_admin = Role::updateOrCreate([
-            'name'  => 'Global-Admin',
+            'name' => 'Global-Admin',
         ]);
         $global_admin->givePermissionTo([
             // admin permissions
@@ -68,7 +69,7 @@ class RoleSeeder extends Seeder
         ]);
 
         $transport_manager = Role::updateOrCreate([
-            'name'  => 'Transport-Manager',
+            'name' => 'Transport-Manager',
         ]);
         $transport_manager->givePermissionTo([
             // admin permissions
@@ -100,7 +101,7 @@ class RoleSeeder extends Seeder
         ]);
 
         $ops_manager = Role::updateOrCreate([
-            'name'  => 'Operations-Manager',
+            'name' => 'Operations-Manager',
         ]);
         $ops_manager->givePermissionTo([
             // admin permissions
@@ -139,7 +140,7 @@ class RoleSeeder extends Seeder
         ]);
 
         $sales_clerk = Role::updateOrCreate([
-            'name'  => 'Sales-Administrator',
+            'name' => 'Sales-Administrator',
         ]);
         $sales_clerk->givePermissionTo([
             // admin permissions
@@ -167,7 +168,7 @@ class RoleSeeder extends Seeder
         ]);
 
         $driver = Role::updateOrCreate([
-            'name'  => 'Driver',
+            'name' => 'Driver',
         ]);
         $driver->givePermissionTo([
             // admin permissions
@@ -194,7 +195,7 @@ class RoleSeeder extends Seeder
         ]);
 
         $systemAdmin = Role::updateOrCreate(['name' => 'System-Admin']);
-        $systemAdmin->syncPermissions(\Spatie\Permission\Models\Permission::all());
+        $systemAdmin->syncPermissions(Permission::all());
 
         $yard = Role::updateOrCreate(['name' => 'Yard']);
         $yard->syncPermissions(['pwa.yard_receipt']);

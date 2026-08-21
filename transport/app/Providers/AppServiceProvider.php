@@ -41,6 +41,7 @@ class AppServiceProvider extends ServiceProvider
         // gate access to admin functions and show links
         Gate::define('admin.area', function ($user, ?string $area = null): bool {
             $area ??= explode('.', (string) request()->route()?->getName())[1] ?? '';
+
             return $user->getAllPermissions()
                 ->pluck('name')
                 ->contains(fn ($permission) => str_starts_with($permission, "admin.{$area}."));
@@ -54,6 +55,7 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('setup.area', function ($user, ?string $area = null): bool {
             $area ??= rtrim(explode('.', (string) request()->route()?->getName())[1] ?? '', 's');
+
             return $user->getAllPermissions()
                 ->pluck('name')
                 ->contains(fn ($permission) => str_starts_with($permission, "setup.{$area}."));
@@ -62,6 +64,7 @@ class AppServiceProvider extends ServiceProvider
         // gate access to admin functions and show links
         Gate::define('user.area', function ($user, ?string $area = null): bool {
             $area ??= rtrim(explode('.', (string) request()->route()?->getName())[1] ?? '', 's');
+
             return $user->getAllPermissions()
                 ->pluck('name')
                 ->contains(fn ($permission) => str_starts_with($permission, "user.{$area}."));

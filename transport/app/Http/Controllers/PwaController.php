@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PwaController extends Controller
@@ -33,6 +34,7 @@ class PwaController extends Controller
     public function bootstrap(Request $request): JsonResponse
     {
         abort_unless(Gate::allows('pwa.driver') || Gate::allows('pwa.yard_receipt'), 403);
+
         return response()->json($this->bootstrapData($request));
     }
 
@@ -51,6 +53,7 @@ class PwaController extends Controller
             $prior = DB::table('mobile_sync_operations')->where('operation_id', $operation['id'])->first();
             if ($prior) {
                 $results[] = ['id' => $operation['id'], 'ok' => true, 'replayed' => true, 'result' => json_decode($prior->result ?? '{}', true)];
+
                 continue;
             }
 
@@ -64,12 +67,13 @@ class PwaController extends Controller
                         'operation_id' => $operation['id'], 'user_id' => $request->user()->id,
                         'operation_type' => $operation['type'], 'result' => json_encode($result), 'processed_at' => now(),
                     ]);
+
                     return $result;
                 });
                 $results[] = ['id' => $operation['id'], 'ok' => true, 'result' => $result];
             } catch (\Throwable $exception) {
                 report($exception);
-                $results[] = ['id' => $operation['id'], 'ok' => false, 'message' => $exception instanceof \Illuminate\Validation\ValidationException
+                $results[] = ['id' => $operation['id'], 'ok' => false, 'message' => $exception instanceof ValidationException
                     ? collect($exception->errors())->flatten()->first() : 'This change needs manager review.'];
             }
         }
@@ -94,7 +98,7 @@ class PwaController extends Controller
         $movement = Movement::query()->lockForUpdate()->findOrFail($data['movement_id']);
         abort_unless($movement->driver_id === $request->user()->id || $movement->actions()->where('driver_id', $request->user()->id)->exists() || Gate::allows('user.movement.complete'), 403);
         if ($movement->lock_version !== $data['expected_lock_version']) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['sync' => 'The job changed while this device was offline. Manager review is required.']);
+            throw ValidationException::withMessages(['sync' => 'The job changed while this device was offline. Manager review is required.']);
         }
 
         if (! empty($data['recipient_name'])) {
@@ -102,6 +106,7 @@ class PwaController extends Controller
         }
         $this->storeEvidence($movement, $data, $request);
         $movement = $workflow->transition($movement, MovementStatus::from($data['to_status']), $request->user(), $data['reason'] ?? null);
+
         return ['movement_id' => $movement->id, 'status' => $movement->status->value, 'lock_version' => $movement->lock_version];
     }
 
@@ -147,17 +152,24 @@ class PwaController extends Controller
             $item->accessories()->create(['type' => 'received', 'description' => $data['accessories'], 'completed' => true]);
         }
         $this->storeEvidence($movement, $data, $request);
+
         return ['movement_id' => $movement->id, 'reference' => $movement->reference, 'status' => $movement->status->value];
     }
 
     private function storeEvidence(Movement $movement, array $data, Request $request): void
     {
         $evidence = array_map(fn ($photo) => ['type' => 'condition', 'data' => $photo], $data['photos'] ?? []);
-        if (! empty($data['signature'])) { $evidence[] = ['type' => 'signature', 'data' => $data['signature']]; }
+        if (! empty($data['signature'])) {
+            $evidence[] = ['type' => 'signature', 'data' => $data['signature']];
+        }
         foreach ($evidence as $index => $entry) {
-            if (! preg_match('/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/', $entry['data'], $matches)) { continue; }
+            if (! preg_match('/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/', $entry['data'], $matches)) {
+                continue;
+            }
             $bytes = base64_decode($matches[2], true);
-            if ($bytes === false || strlen($bytes) > 10 * 1024 * 1024) { continue; }
+            if ($bytes === false || strlen($bytes) > 10 * 1024 * 1024) {
+                continue;
+            }
             $extension = str_contains($matches[1], 'png') ? 'png' : 'jpg';
             $path = "movements/{$movement->id}/{$entry['type']}-".Str::uuid().".{$extension}";
             Storage::disk('local')->put($path, $bytes);
@@ -170,8 +182,11 @@ class PwaController extends Controller
         $user = $request->user();
         $companyIds = $user->hasRole('Super-Admin') ? Company::pluck('id') : $user->companies()->pluck('companies.id')->push($user->company_id)->filter()->unique();
         $jobs = Movement::query()->with(['customer', 'actions.site', 'items.accessories'])
-            ->where(function ($query) use ($user) { $query->where('driver_id', $user->id)->orWhereHas('actions', fn ($query) => $query->where('driver_id', $user->id)); })
+            ->where(function ($query) use ($user) {
+                $query->where('driver_id', $user->id)->orWhereHas('actions', fn ($query) => $query->where('driver_id', $user->id));
+            })
             ->whereNotIn('status', ['completed', 'cancelled'])->orderBy('schedule_start')->get();
+
         return [
             'user' => ['id' => $user->id, 'name' => $user->name],
             'permissions' => ['driver' => Gate::allows('pwa.driver'), 'yard' => Gate::allows('pwa.yard_receipt')],

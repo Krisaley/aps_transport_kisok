@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Spatie\Permission\Models\Role as SpatieRole;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use App\Concerns\HasActivityLog;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Spatie\Permission\Models\Role as SpatieRole;
 
 #[Fillable(['name', 'guard_name', 'is_active'])]
 class Role extends SpatieRole

@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MovementDocumentController;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified', 'account.is_active'])->group(function () {
     Route::get('operations/movements/{movement}/documents/{type}/preview', [MovementDocumentController::class, 'preview'])->name('documents.preview');

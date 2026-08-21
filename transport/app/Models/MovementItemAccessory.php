@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
+use App\Concerns\HasActivityLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Concerns\HasActivityLog;
 
 class MovementItemAccessory extends Model
 {
     use HasActivityLog;
-    
+
     protected $fillable = [
         'movement_item_id',
         'type',

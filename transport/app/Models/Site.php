@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
+use App\Concerns\HasActivityLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Concerns\HasActivityLog;
 
 class Site extends Model
 {
     use HasActivityLog;
-    
+
     protected $fillable = [
         'name',
         'address_line_1',

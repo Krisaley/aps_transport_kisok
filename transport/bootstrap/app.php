@@ -18,11 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role'                  => RoleMiddleware::class,
-            'permission'            => PermissionMiddleware::class,
-            'role_or_permission'    => RoleOrPermissionMiddleware::class,
-            'account.is_active'     => EnsureUserStatus::class,
-            'system.admin'          => EnsureAdminUser::class,
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'account.is_active' => EnsureUserStatus::class,
+            'system.admin' => EnsureAdminUser::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

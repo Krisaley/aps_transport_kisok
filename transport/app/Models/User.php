@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Concerns\HasActivityLog;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -17,7 +18,6 @@ use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-use App\Concerns\HasActivityLog;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -38,9 +38,9 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements PasskeyUser
 {
     use HasActivityLog;
-    
+
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable, HasRoles;
+    use HasFactory, HasRoles, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     /**
      * Get the attributes that should be cast.
@@ -73,9 +73,15 @@ class User extends Authenticatable implements PasskeyUser
         return $this->hasMany(Movement::class, 'driver_id');
     }
 
-    public function company(): BelongsTo { return $this->belongsTo(Company::class); }
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
 
-    public function companies(): BelongsToMany { return $this->belongsToMany(Company::class); }
+    public function companies(): BelongsToMany
+    {
+        return $this->belongsToMany(Company::class);
+    }
 
     public function canAccessCompany(int $companyId): bool
     {

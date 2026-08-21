@@ -28,7 +28,7 @@ class EnsureUserStatus
                     'email' => __('Your account has been disabled'),
                 ]);
         }
-        
+
         return $next($request);
     }
 }
