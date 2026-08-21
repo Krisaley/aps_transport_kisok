@@ -23,6 +23,7 @@ class Vehicle extends Model
         ];
     }
 
+    /** @return HasMany<Movement, $this> */
     public function movements(): HasMany
     {
         return $this->hasMany(Movement::class);

@@ -17,11 +17,13 @@ class Equipment extends Model
         'serial_number',
     ];
 
+    /** @return BelongsTo<EquipmentModel, $this> */
     public function equipmentModel(): BelongsTo
     {
         return $this->belongsTo(EquipmentModel::class, 'model_id');
     }
 
+    /** @return HasMany<MovementItem, $this> */
     public function movementItems(): HasMany
     {
         return $this->hasMany(MovementItem::class);

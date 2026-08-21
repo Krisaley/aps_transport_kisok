@@ -14,7 +14,7 @@ class MovementWorkflow
 {
     public function transition(Movement $movement, MovementStatus $to, User $actor, ?string $reason = null): Movement
     {
-        $from = $movement->status instanceof MovementStatus ? $movement->status : MovementStatus::from($movement->status);
+        $from = $movement->status;
 
         if (! in_array($to, $from->next(), true)) {
             throw ValidationException::withMessages(['status' => "A movement cannot move from {$from->label()} to {$to->label()}."]);
@@ -95,6 +95,7 @@ class MovementWorkflow
     }
 
     /** Fields which cannot be silently changed after scheduling. */
+    /** @return list<string> */
     public static function routingFields(): array
     {
         return ['company_id', 'customer_id', 'delivery_site_id', 'collection_site_id', 'movement_type'];

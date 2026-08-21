@@ -32,11 +32,13 @@ class MovementDocument extends Model
         ];
     }
 
+    /** @return BelongsTo<Movement, $this> */
     public function movement(): BelongsTo
     {
         return $this->belongsTo(Movement::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

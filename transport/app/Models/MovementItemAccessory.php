@@ -27,6 +27,7 @@ class MovementItemAccessory extends Model
         ];
     }
 
+    /** @return BelongsTo<MovementItem, $this> */
     public function movementItem(): BelongsTo
     {
         return $this->belongsTo(MovementItem::class);

@@ -36,26 +36,31 @@ class MovementItem extends Model
         ];
     }
 
+    /** @return BelongsTo<MovementAction, $this> */
     public function action(): BelongsTo
     {
         return $this->belongsTo(MovementAction::class, 'movement_action_id');
     }
 
+    /** @return BelongsTo<Movement, $this> */
     public function movement(): BelongsTo
     {
         return $this->belongsTo(Movement::class);
     }
 
+    /** @return BelongsTo<Equipment, $this> */
     public function equipment(): BelongsTo
     {
         return $this->belongsTo(Equipment::class);
     }
 
+    /** @return HasMany<MovementItemAccessory, $this> */
     public function accessories(): HasMany
     {
         return $this->hasMany(MovementItemAccessory::class);
     }
 
+    /** @return HasMany<MovementPhoto, $this> */
     public function photos(): HasMany
     {
         return $this->hasMany(MovementPhoto::class);

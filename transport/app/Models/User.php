@@ -30,6 +30,8 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
  * @property string|null $remember_token
+ * @property int|null $company_id
+ * @property bool $is_active
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -68,16 +70,19 @@ class User extends Authenticatable implements PasskeyUser
             : $initials;
     }
 
+    /** @return HasMany<Movement, $this> */
     public function drivenMovements(): HasMany
     {
         return $this->hasMany(Movement::class, 'driver_id');
     }
 
+    /** @return BelongsTo<Company, $this> */
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
     }
 
+    /** @return BelongsToMany<Company, $this> */
     public function companies(): BelongsToMany
     {
         return $this->belongsToMany(Company::class);
@@ -90,26 +95,31 @@ class User extends Authenticatable implements PasskeyUser
             || $this->companies()->whereKey($companyId)->exists();
     }
 
+    /** @return HasMany<Movement, $this> */
     public function createdMovements(): HasMany
     {
         return $this->hasMany(Movement::class, 'created_by');
     }
 
+    /** @return HasMany<Movement, $this> */
     public function updatedMovements(): HasMany
     {
         return $this->hasMany(Movement::class, 'updated_by');
     }
 
+    /** @return HasMany<Movement, $this> */
     public function completedMovements(): HasMany
     {
         return $this->hasMany(Movement::class, 'completed_by');
     }
 
+    /** @return HasMany<MovementDocument, $this> */
     public function createdDocuments(): HasMany
     {
         return $this->hasMany(MovementDocument::class, 'created_by');
     }
 
+    /** @return HasMany<MovementPhoto, $this> */
     public function uploadedPhotos(): HasMany
     {
         return $this->hasMany(MovementPhoto::class, 'uploaded_by');

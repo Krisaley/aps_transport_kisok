@@ -14,7 +14,7 @@ class UserSeeder extends Seeder
     {
         $email = config('app.bootstrap_admin_email');
         if (blank($email)) {
-            $this->command?->warn('BOOTSTRAP_ADMIN_EMAIL is not set; no login account was seeded.');
+            $this->command->warn('BOOTSTRAP_ADMIN_EMAIL is not set; no login account was seeded.');
 
             return;
         } $company = Company::where('code', 'APS')->firstOrFail();

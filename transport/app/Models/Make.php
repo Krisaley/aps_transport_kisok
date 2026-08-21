@@ -14,6 +14,7 @@ class Make extends Model
         'name',
     ];
 
+    /** @return HasMany<EquipmentModel, $this> */
     public function equipmentModels(): HasMany
     {
         return $this->hasMany(EquipmentModel::class);
@@ -24,6 +25,8 @@ class Make extends Model
      *
      * The makes index constrains this relationship to the current search term
      * while retaining equipmentModels for make-name matches.
+     *
+     * @return HasMany<EquipmentModel, $this>
      */
     public function matchingEquipmentModels(): HasMany
     {

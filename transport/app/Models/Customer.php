@@ -16,6 +16,7 @@ class Customer extends Model
         'company_id',
     ];
 
+    /** @return HasMany<Movement, $this> */
     public function movements(): HasMany
     {
         return $this->hasMany(Movement::class);

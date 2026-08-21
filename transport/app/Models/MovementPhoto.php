@@ -32,16 +32,19 @@ class MovementPhoto extends Model
         ];
     }
 
+    /** @return BelongsTo<Movement, $this> */
     public function movement(): BelongsTo
     {
         return $this->belongsTo(Movement::class);
     }
 
+    /** @return BelongsTo<MovementItem, $this> */
     public function movementItem(): BelongsTo
     {
         return $this->belongsTo(MovementItem::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');

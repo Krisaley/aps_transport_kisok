@@ -22,11 +22,13 @@ class Site extends Model
         'company_id',
     ];
 
+    /** @return HasMany<Movement, $this> */
     public function deliveryMovements(): HasMany
     {
         return $this->hasMany(Movement::class, 'delivery_site_id');
     }
 
+    /** @return HasMany<Movement, $this> */
     public function collectionMovements(): HasMany
     {
         return $this->hasMany(Movement::class, 'collection_site_id');

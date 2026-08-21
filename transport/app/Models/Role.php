@@ -6,6 +6,7 @@ use App\Concerns\HasActivityLog;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Spatie\Permission\Models\Role as SpatieRole;
 
+/** @property bool $is_active */
 #[Fillable(['name', 'guard_name', 'is_active'])]
 class Role extends SpatieRole
 {

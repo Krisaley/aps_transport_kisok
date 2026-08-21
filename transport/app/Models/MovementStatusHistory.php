@@ -18,11 +18,13 @@ class MovementStatusHistory extends Model
         return ['created_at' => 'datetime'];
     }
 
+    /** @return BelongsTo<Movement, $this> */
     public function movement(): BelongsTo
     {
         return $this->belongsTo(Movement::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function changer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'changed_by');

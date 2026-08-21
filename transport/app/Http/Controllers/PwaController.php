@@ -81,6 +81,10 @@ class PwaController extends Controller
         return response()->json(['results' => $results, 'server_time' => now()->toIso8601String()]);
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
     private function transition(array $payload, Request $request, MovementWorkflow $workflow): array
     {
         abort_unless(Gate::allows('pwa.driver'), 403);
@@ -95,7 +99,7 @@ class PwaController extends Controller
             'expected_lock_version' => ['required', 'integer'],
         ])->validate();
 
-        $movement = Movement::query()->lockForUpdate()->findOrFail($data['movement_id']);
+        $movement = Movement::query()->lockForUpdate()->findOrFail((int) $data['movement_id']);
         abort_unless($movement->driver_id === $request->user()->id || $movement->actions()->where('driver_id', $request->user()->id)->exists() || Gate::allows('user.movement.complete'), 403);
         if ($movement->lock_version !== $data['expected_lock_version']) {
             throw ValidationException::withMessages(['sync' => 'The job changed while this device was offline. Manager review is required.']);
@@ -110,6 +114,10 @@ class PwaController extends Controller
         return ['movement_id' => $movement->id, 'status' => $movement->status->value, 'lock_version' => $movement->lock_version];
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
     private function createYardReceipt(array $payload, Request $request): array
     {
         abort_unless(Gate::allows('pwa.yard_receipt'), 403);
@@ -129,10 +137,10 @@ class PwaController extends Controller
         ])->validate();
         abort_unless($request->user()->canAccessCompany($data['company_id']), 403);
 
-        $customer = ! empty($data['customer_id']) ? Customer::findOrFail($data['customer_id']) : Customer::firstOrCreate(
+        $customer = ! empty($data['customer_id']) ? Customer::findOrFail((int) $data['customer_id']) : Customer::firstOrCreate(
             ['account_number' => 'TEMP-UNKNOWN'], ['name' => 'Unknown - awaiting identification', 'company_id' => $data['company_id']]
         );
-        $site = Site::findOrFail($data['site_id']);
+        $site = Site::findOrFail((int) $data['site_id']);
         $reference = 'YR-'.now()->format('Ymd').'-'.str_pad((string) (Movement::withTrashed()->count() + 1), 5, '0', STR_PAD_LEFT);
         $movement = Movement::create([
             'company_id' => $data['company_id'], 'status' => MovementStatus::AwaitingSchedule,
@@ -156,6 +164,7 @@ class PwaController extends Controller
         return ['movement_id' => $movement->id, 'reference' => $movement->reference, 'status' => $movement->status->value];
     }
 
+    /** @param array<string, mixed> $data */
     private function storeEvidence(Movement $movement, array $data, Request $request): void
     {
         $evidence = array_map(fn ($photo) => ['type' => 'condition', 'data' => $photo], $data['photos'] ?? []);
@@ -177,6 +186,7 @@ class PwaController extends Controller
         }
     }
 
+    /** @return array<string, mixed> */
     private function bootstrapData(Request $request): array
     {
         $user = $request->user();

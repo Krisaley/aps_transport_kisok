@@ -18,11 +18,13 @@ class EquipmentModel extends Model
         'name',
     ];
 
+    /** @return BelongsTo<Make, $this> */
     public function make(): BelongsTo
     {
         return $this->belongsTo(Make::class);
     }
 
+    /** @return HasMany<Equipment, $this> */
     public function equipment(): HasMany
     {
         return $this->hasMany(Equipment::class, 'model_id');

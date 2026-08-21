@@ -7,7 +7,13 @@ use App\Enums\MovementActionType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int|null $site_id
+ * @property Carbon|null $schedule_start
+ * @property Carbon|null $schedule_end
+ */
 class MovementAction extends Model
 {
     use HasActivityLog;
@@ -23,26 +29,31 @@ class MovementAction extends Model
         ];
     }
 
+    /** @return BelongsTo<Movement, $this> */
     public function movement(): BelongsTo
     {
         return $this->belongsTo(Movement::class);
     }
 
+    /** @return BelongsTo<Site, $this> */
     public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function driver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'driver_id');
     }
 
+    /** @return BelongsTo<Vehicle, $this> */
     public function vehicle(): BelongsTo
     {
         return $this->belongsTo(Vehicle::class);
     }
 
+    /** @return HasMany<MovementItem, $this> */
     public function items(): HasMany
     {
         return $this->hasMany(MovementItem::class);
