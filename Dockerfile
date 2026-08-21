@@ -19,7 +19,9 @@ COPY transport/ .
 COPY --from=vendor /src/vendor vendor
 COPY --from=assets /src/public/build public/build
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/transport.ini
-RUN mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache && chown -R www-data:www-data storage bootstrap/cache && php artisan package:discover --ansi
+RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && php artisan package:discover --ansi
 USER www-data
 HEALTHCHECK --interval=15s --timeout=5s --retries=8 CMD php -r 'exit(@fsockopen("127.0.0.1",9000)?0:1);'
 
