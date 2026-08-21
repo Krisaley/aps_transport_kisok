@@ -39,11 +39,18 @@ services:
     healthcheck: {test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"], interval: 10s, timeout: 5s, retries: 10}
   redis:
     image: redis:8-alpine
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - ${REDIS_PASSWORD}
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD}
     restart: unless-stopped
     volumes: [redis-data:/data]
     networks: [internal]
-    healthcheck: {test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping | grep PONG"], interval: 10s, timeout: 5s, retries: 10}
+    healthcheck: {test: ["CMD", "redis-cli", "ping"], interval: 10s, timeout: 5s, retries: 10}
   backup:
     image: postgres:17-bookworm
     env_file:
