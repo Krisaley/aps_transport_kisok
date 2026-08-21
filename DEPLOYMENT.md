@@ -13,6 +13,37 @@ The pilot runs as a Docker Compose stack on the Ubuntu VM. PostgreSQL and Redis 
 
 The N54L's two CPU cores and 8 GB RAM are adequate for a small pilot, but image builds happen in GitHub Actions so the server only pulls release images.
 
+## GitHub Container Registry authentication
+
+Authenticate GHCR as the same operating-system user that runs Docker Compose. The automated deployment runs Docker as `DEPLOY_USER` without `sudo`, so complete the primary login procedure while signed in as that account.
+
+### Obtain a personal access token
+
+1. Go to 'User Navigation' (top right corner)
+2. Settings
+3. Developer Settings
+4. Personal Access Tokens -> Tokens (Classic)
+5. Generate a new classic token and grant only the `read:packages` scope.
+6. If the organisation enforces SAML SSO, authorise the token for that organisation.
+
+The GitHub account that owns the token must also have read access to this repository's container packages.
+
+### Log in using the token
+
+While signed in to the Docker server as `DEPLOY_USER`, run:
+
+```sh
+docker login ghcr.io -u YOUR_GITHUB_USERNAME
+```
+
+Paste the personal access token at the password prompt. Docker should report `Login Succeeded`.
+
+Replace `YOUR_GITHUB_USERNAME` with the GitHub user that owns the token. Never commit the token or add it to the application `.env` file.
+
+If Compose is intentionally run manually with `sudo docker compose` instead of through the automated deployment, authenticate root with `sudo docker login ghcr.io -u YOUR_GITHUB_USERNAME`. Use the same operating-system account and privilege level for both login and subsequent Compose commands.
+
+To replace an expired or revoked token, run the appropriate login sequence with a new token. To remove credentials stored for `DEPLOY_USER`, run `docker logout ghcr.io`; use `sudo docker logout ghcr.io` for credentials stored for root.
+
 ## GitHub configuration
 
 Create a protected `production` environment with required reviewers. Add environment secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_PATH`, and `DEPLOY_SSH_KEY`. Protect `main`, require the CI workflow, and disallow force-pushes.
