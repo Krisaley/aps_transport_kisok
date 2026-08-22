@@ -1,23 +1,33 @@
 # /dashboard
+remains unused, could be used with kpi, stats, capacity, metrics etc
 
-## general notes
-- dashboard is unused
+# /settings/users
+no notes
 
-# /operations/movements
+# /settings/roles
+no notes
 
-## general notes
-- no ability to define preferences (day/week/month view)
+# /settings/configuration
+only covers site name, could add additional config options
 
-# /operations/movements/create
+# /setup
+dashboard is unused, but dont currently see any potential use
 
-## general notes
--form does not flow
+# /setup/makes
+rows need addition to action menu to add a new model
+
+# /setup/makes/create
+works as intended but feels lacking/incomplete
+
+# /setup/makes/{make}/update
+works as intended but feels lacking/incomplete
+
+# /setup/models
+redundant menu option as managed through /setup/makes
+
+# /setup/models/{model}/update
+missing sidebar (layout.blade.php)
+missing header (setup-partial.blade.php)
 
 
-## missing functionality
-- unable to add customer while filling movement form
-- unable to create site during form completion
 
-## missing options
-Action
-- no 'Site to Site' option

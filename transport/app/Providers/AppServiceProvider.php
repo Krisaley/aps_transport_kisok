@@ -31,6 +31,64 @@ class AppServiceProvider extends ServiceProvider
             return $user->hasRole('Super-Admin') ? true : null;
         });
 
+        // operations gate checks
+        Gate::define('system.operations', function ($user): bool {
+            return $user->getAllPermissions()
+                ->pluck('name')
+                ->contains(fn ($permission) => str_starts_with($permission, 'operations.'));
+        });
+
+        Gate::define('operations.area', function ($user, ?string $area = null): bool {
+            $area ??= rtrim(explode('.', (string) request()->route()?->getName())[1] ?? '', 's');
+
+            return $user->getAllPermissions()
+                ->pluck('name')
+                ->contains(fn ($permission) => str_starts_with($permission, "operations.{$area}."));
+        });
+
+        // crm gate checks
+        Gate::define('system.crm', function ($user): bool {
+            return $user->getAllPermissions()
+                ->pluck('name')
+                ->contains(fn ($permission) => str_starts_with($permission, 'crm.'));
+        });
+
+        Gate::define('crm.area', function ($user, ?string $area = null): bool {
+            $area ??= rtrim(explode('.', (string) request()->route()?->getName())[1] ?? '', 's');
+
+            return $user->getAllPermissions()
+                ->pluck('name')
+                ->contains(fn ($permission) => str_starts_with($permission, "crm.{$area}."));
+        });
+
+        Gate::define('system.stock', function ($user): bool {
+            return $user->getAllPermissions()
+                ->pluck('name')
+                ->contains(fn ($permission) => str_starts_with($permission, 'stock.'));
+        });
+
+        Gate::define('stock.area', function ($user, ?string $area = null): bool {
+            $area ??= rtrim(explode('.', (string) request()->route()?->getName())[1] ?? '', 's');
+
+            return $user->getAllPermissions()
+                ->pluck('name')
+                ->contains(fn ($permission) => str_starts_with($permission, "stock.{$area}."));
+        });
+
+        Gate::define('system.transport', function ($user): bool {
+            return $user->getAllPermissions()
+                ->pluck('name')
+                ->contains(fn ($permission) => str_starts_with($permission, 'transport.'));
+        });
+
+        Gate::define('transport.area', function ($user, ?string $area = null): bool {
+            $area ??= rtrim(explode('.', (string) request()->route()?->getName())[1] ?? '', 's');
+
+            return $user->getAllPermissions()
+                ->pluck('name')
+                ->contains(fn ($permission) => str_starts_with($permission, "transport.{$area}."));
+        });
+
         // gate access to admin area and show link
         Gate::define('system.admin', function ($user): bool {
             return $user->getAllPermissions()
@@ -45,20 +103,6 @@ class AppServiceProvider extends ServiceProvider
             return $user->getAllPermissions()
                 ->pluck('name')
                 ->contains(fn ($permission) => str_starts_with($permission, "admin.{$area}."));
-        });
-
-        Gate::define('system.setup', function ($user): bool {
-            return $user->getAllPermissions()
-                ->pluck('name')
-                ->contains(fn ($permission) => str_starts_with($permission, 'setup.'));
-        });
-
-        Gate::define('setup.area', function ($user, ?string $area = null): bool {
-            $area ??= rtrim(explode('.', (string) request()->route()?->getName())[1] ?? '', 's');
-
-            return $user->getAllPermissions()
-                ->pluck('name')
-                ->contains(fn ($permission) => str_starts_with($permission, "setup.{$area}."));
         });
 
         // gate access to admin functions and show links

@@ -100,7 +100,7 @@ class PwaController extends Controller
         ])->validate();
 
         $movement = Movement::query()->lockForUpdate()->findOrFail((int) $data['movement_id']);
-        abort_unless($movement->driver_id === $request->user()->id || $movement->actions()->where('driver_id', $request->user()->id)->exists() || Gate::allows('user.movement.complete'), 403);
+        abort_unless($movement->driver_id === $request->user()->id || $movement->actions()->where('driver_id', $request->user()->id)->exists() || Gate::allows('operations.movement.complete'), 403);
         if ($movement->lock_version !== $data['expected_lock_version']) {
             throw ValidationException::withMessages(['sync' => 'The job changed while this device was offline. Manager review is required.']);
         }

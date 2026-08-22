@@ -94,7 +94,7 @@ new #[Title('Makes & Models')] class extends Component
 
     <flux:heading class="sr-only">{{ __('Makes and Models') }}</flux:heading>
 
-    <x-pages::setup.layout
+    <x-pages::shared.layout
         :contentclass="__('mt-5 w-full max-w-7xl')"
         >
 
@@ -117,11 +117,11 @@ new #[Title('Makes & Models')] class extends Component
                 </div>
 
                 <div class="flex shrink-0 gap-2">
-                    @can('setup.make.create')
+                    @can('stock.make-model.create')
                         <flux:button
                             variant="primary"
                             icon="plus"
-                            :href="route('setup.makes.create')"
+                            :href="route('stock.makes.create')"
                         >
                             {{ __('Add Make') }}
                         </flux:button>
@@ -172,11 +172,11 @@ new #[Title('Makes & Models')] class extends Component
                                     @endif
                                 </flux:table.cell>
                                 <flux:table.cell align="end">
-                                    @can('setup.make.update')
+                                    @can('stock.make-model.update')
                                         <flux:dropdown size="sm" variant="ghost" position="bottom" align="end">
                                             <flux:button icon="ellipsis-horizontal" variant="ghost" size="sm" />
                                             <flux:menu>
-                                                <flux:menu.item icon="pencil" :href="route('setup.makes.update', $make)">{{ __('Manage') }}</flux:menu.item>
+                                                <flux:menu.item icon="pencil" :href="route('stock.makes.update', $make)">{{ __('Manage') }}</flux:menu.item>
                                             </flux:menu>
                                         </flux:dropdown>
                                     @endcan
@@ -190,8 +190,8 @@ new #[Title('Makes & Models')] class extends Component
                                             @forelse ($visibleModels as $model)
                                                 <div class="flex items-center justify-between gap-4 py-2 text-sm text-zinc-700 dark:text-zinc-300">
                                                     <span>{{ $model->name }}</span>
-                                                    @can('setup.model.update')
-                                                        <flux:button size="xs" variant="ghost" :href="route('setup.models.update', $model)">
+                                                    @can('stock.make-model.update')
+                                                        <flux:button size="xs" variant="ghost" :href="route('stock.models.update', $model)">
                                                             {{ __('Manage') }}
                                                         </flux:button>
                                                     @endcan
@@ -217,5 +217,5 @@ new #[Title('Makes & Models')] class extends Component
 
         </div>
 
-    </x-pages::setup.layout>
+    </x-pages::shared.layout>
 </section>

@@ -54,7 +54,7 @@ new #[Title('Customers')] class extends Component {
 
     <flux:heading class="sr-only">{{ __('Customer') }}</flux:heading>
 
-    <x-pages::setup.layout
+    <x-pages::shared.layout
         :contentclass="__('mt-5 w-full max-w-7xl')"
         >
 
@@ -77,11 +77,11 @@ new #[Title('Customers')] class extends Component {
                 </div>
 
                 <div class="flex shrink-0 gap-2">
-                    @can('admin.user.create')
+                    @can('crm.customer.create')
                         <flux:button
                             variant="primary"
                             icon="plus"
-                            :href="route('setup.customers.create')"
+                            :href="route('crm.customers.create')"
                         >
                             {{ __('Add Customer') }}
                         </flux:button>
@@ -111,7 +111,7 @@ new #[Title('Customers')] class extends Component {
                                     <flux:dropdown size="sm" variant="ghost" position="bottom" align="end">
                                         <flux:button icon="ellipsis-horizontal" variant="ghost" size="sm" />
                                         <flux:menu>
-                                            <flux:menu.item icon="pencil" :href="route('setup.customers.update', $customer)">{{ __('Manage') }}</flux:menu.item>
+                                            <flux:menu.item icon="pencil" :href="route('crm.customers.update', $customer)">{{ __('Manage') }}</flux:menu.item>
                                         </flux:menu>
                                     </flux:dropdown>
                                 </flux:table.cell>

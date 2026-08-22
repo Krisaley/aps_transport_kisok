@@ -15,4 +15,6 @@ Route::middleware(['auth', 'verified', 'account.is_active'])->group(function () 
 require __DIR__.'/profile.php';
 require __DIR__.'/settings.php';
 require __DIR__.'/operations.php';
-require __DIR__.'/setup.php';
+require __DIR__.'/crm.php';
+require __DIR__.'/stock.php';
+require __DIR__.'/transport.php';

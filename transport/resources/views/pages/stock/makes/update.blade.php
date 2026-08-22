@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Make;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -18,6 +19,8 @@ new #[Title('Update Make')] class extends Component
 
     public function save(): void
     {
+        Gate::authorize('stock.make-model.update');
+
         $this->validate([
             'name' => [
                 'required',
@@ -37,7 +40,7 @@ new #[Title('Update Make')] class extends Component
         );
 
         $this->redirectRoute(
-            'setup.makes.index',
+            'stock.makes.index',
             navigate: true
         );
     }
@@ -51,7 +54,7 @@ new #[Title('Update Make')] class extends Component
 
     <flux:heading class="sr-only">{{ __('Update Make') }}</flux:heading>
 
-    <x-pages::setup.layout
+    <x-pages::shared.layout
         :contentclass="__('mt-5 w-full max-w-3xl')"
     >
         <div class="space-y-6">
@@ -68,7 +71,7 @@ new #[Title('Update Make')] class extends Component
 
                 <flux:button
                     variant="ghost"
-                    :href="route('setup.makes.index')"
+                    :href="route('stock.makes.index')"
                     wire:navigate
                 >
                     {{ __('Back') }}
@@ -85,7 +88,7 @@ new #[Title('Update Make')] class extends Component
                 <div class="flex justify-end gap-3">
                     <flux:button
                         variant="ghost"
-                        :href="route('setup.makes.index')"
+                        :href="route('stock.makes.index')"
                         wire:navigate
                     >
                         {{ __('Cancel') }}
@@ -100,5 +103,5 @@ new #[Title('Update Make')] class extends Component
                 </div>
             </form>
         </div>
-    </x-pages::setup.layout>
+    </x-pages::shared.layout>
 </section>

@@ -133,7 +133,7 @@ new #[Title('Movement')] class extends Component {
 
     public function save(): mixed
     {
-        Gate::authorize($this->movement ? 'user.movement.update' : 'user.movement.create');
+        Gate::authorize($this->movement ? 'operations.movement.update' : 'operations.movement.create');
         abort_unless(Auth::user()->canAccessCompany((int) $this->company_id), 403);
 
         $data = $this->validate([
@@ -310,11 +310,11 @@ new #[Title('Movement')] class extends Component {
         abort_unless($this->movement, 404);
         $target = MovementStatus::from($to);
         if (in_array($target, [MovementStatus::Scheduled, MovementStatus::AwaitingSchedule, MovementStatus::OnHold, MovementStatus::Cancelled], true)) {
-            Gate::authorize('user.movement.schedule');
+            Gate::authorize('operations.movement.schedule');
         } elseif ($target === MovementStatus::Assigned) {
-            Gate::authorize('user.movement.assign');
+            Gate::authorize('operations.movement.assign');
         } else {
-            Gate::authorize('user.movement.complete');
+            Gate::authorize('operations.movement.complete');
         }
         $this->movement = $workflow->transition($this->movement, $target, Auth::user(), $this->transitionReason ?: null);
         $this->status = $this->movement->status->value;

@@ -12,36 +12,31 @@ class PageAccessTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_setup_pages_require_the_matching_setup_permission(): void
+    public function test_resource_pages_require_the_matching_permission_family(): void
     {
         $this->seed(PermissionSeeder::class);
 
         $user = User::factory()->create(['is_active' => true]);
 
-        $this->actingAs($user)
-            ->get(route('setup.dashboard'))
-            ->assertForbidden()
-            ->assertSee('403 - Access denied');
-
-        $this->get(route('setup.makes.index'))
-            ->assertForbidden()
-            ->assertSee('403 - Access denied');
-
         $permissions = [
-            'setup.make.create' => 'setup.makes.index',
-            'setup.model.create' => 'setup.models.index',
-            'setup.customer.create' => 'setup.customers.index',
-            'setup.site.create' => 'setup.sites.index',
-            'setup.equipment.create' => 'setup.equipment.index',
-            'setup.vehicle.create' => 'setup.vehicles.index',
+            'stock.make-model.create' => 'stock.makes.index',
+            'crm.customer.create' => 'crm.customers.index',
+            'crm.site.create' => 'crm.sites.index',
+            'stock.equipment.create' => 'stock.equipment.index',
+            'transport.vehicle.create' => 'transport.vehicles.index',
         ];
 
-        $user->givePermissionTo(array_keys($permissions));
+        foreach ($permissions as $permission => $routeName) {
+            $this->actingAs($user)
+                ->get(route($routeName))
+                ->assertForbidden()
+                ->assertSee('403 - Access denied');
 
-        $this->actingAs($user)->get(route('setup.dashboard'))->assertOk();
-
-        foreach ($permissions as $routeName) {
-            $this->get(route($routeName))->assertOk();
+            $user->givePermissionTo($permission);
+            $user->unsetRelation('permissions');
+            $this->actingAs($user)->get(route($routeName))->assertOk();
+            $user->revokePermissionTo($permission);
+            $user->unsetRelation('permissions');
         }
     }
 
@@ -56,7 +51,7 @@ class PageAccessTest extends TestCase
             ->assertForbidden()
             ->assertSee('403 - Access denied');
 
-        $user->givePermissionTo('user.movement.create');
+        $user->givePermissionTo('operations.movement.create');
 
         $this->actingAs($user)->get(route('operations.movements.index'))->assertOk();
     }
@@ -76,19 +71,16 @@ class PageAccessTest extends TestCase
             'settings.dashboard',
             'settings.users.index',
             'settings.roles.index',
-            'setup.dashboard',
-            'setup.makes.index',
-            'setup.models.index',
-            'setup.customers.index',
-            'setup.sites.index',
-            'setup.equipment.index',
-            'setup.vehicles.index',
-            'setup.makes.create',
-            'setup.models.create',
-            'setup.customers.create',
-            'setup.sites.create',
-            'setup.equipment.create',
-            'setup.vehicles.create',
+            'stock.makes.index',
+            'crm.customers.index',
+            'crm.sites.index',
+            'stock.equipment.index',
+            'transport.vehicles.index',
+            'stock.makes.create',
+            'crm.customers.create',
+            'crm.sites.create',
+            'stock.equipment.create',
+            'transport.vehicles.create',
             'operations.movements.index',
             'operations.movements.create',
         ];

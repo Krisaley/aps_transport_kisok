@@ -41,7 +41,7 @@ class MakesIndexTest extends TestCase
         EquipmentModel::create(['make_id' => $canycom->id, 'name' => 'S25A']);
 
         Livewire::actingAs($this->user)
-            ->test('pages::setup.makes.index')
+            ->test('pages::stock.makes.index')
             ->call('toggleMake', $mercedes->id)
             ->call('toggleMake', $canycom->id)
             ->assertSet('expandedMakes', [$mercedes->id, $canycom->id])
@@ -66,7 +66,7 @@ class MakesIndexTest extends TestCase
         EquipmentModel::create(['make_id' => $palfinger->id, 'name' => 'PT28T']);
 
         $component = Livewire::actingAs($this->user)
-            ->test('pages::setup.makes.index')
+            ->test('pages::stock.makes.index')
             ->set('search', 'PT28')
             ->assertSee('Palfinger')
             ->assertSee('PT28T')
@@ -86,7 +86,7 @@ class MakesIndexTest extends TestCase
         Make::create(['name' => 'Zulu']);
 
         Livewire::actingAs($this->user)
-            ->test('pages::setup.makes.index')
+            ->test('pages::stock.makes.index')
             ->assertSeeInOrder(['Alpha', 'Zulu'])
             ->call('sort', 'name')
             ->assertSet('sortDirection', 'DESC')

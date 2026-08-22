@@ -17,34 +17,58 @@
                     </flux:sidebar.item>
                 </flux:sidebar.group>
 
-                @can('user.area', 'movement')
+                @can('system.operations')
                     <flux:sidebar.group :heading="__('Operations')" class="grid">
-                        <flux:sidebar.item icon="truck" :href="route('operations.movements.index')" :current="request()->routeIs('operations.*')" wire:navigate>
-                            {{ __('Movements') }}
-                        </flux:sidebar.item>
+                        @can('operations.area', 'movement')
+                            <flux:sidebar.item icon="truck" :href="route('operations.movements.index')" :current="request()->routeIs('operations.movements.*')" wire:navigate>
+                                {{ __('Movements') }}
+                            </flux:sidebar.item>
+                        @endcan
                     </flux:sidebar.group>
                 @endcan
 
-                @can('setup.area', 'customers')
+                @can('system.crm')
                     <flux:sidebar.group :heading="__('CRM')" class="grid">
-                        <flux:sidebar.item icon="users" :href="route('setup.customers.index')" :current="request()->routeIs('setup.customers.*')" wire:navigate>
-                            {{ __('Customers') }}
-                        </flux:sidebar.item>
+                        @can('crm.area', 'customer')
+                            <flux:sidebar.item icon="users" :href="route('crm.customers.index')" :current="request()->routeIs('crm.customers.*')" wire:navigate>
+                                {{ __('Customers') }}
+                            </flux:sidebar.item>
+                        @endcan
+                        @can('crm.area', 'site')
+                            <flux:sidebar.item icon="building-office-2" :href="route('crm.sites.index')" :current="request()->routeIs('crm.sites.*')" wire:navigate>
+                                {{ __('Sites') }}
+                            </flux:sidebar.item>
+                        @endcan
+                    </flux:sidebar.group>
+                @endcan
+
+                @can('system.stock')
+                    <flux:sidebar.group :heading="__('Stock')" class="grid">
+                        @can('stock.area', 'equipment')
+                            <flux:sidebar.item icon="users" :href="route('stock.equipment.index')" :current="request()->routeIs('stock.equipment.*')" wire:navigate>
+                                {{ __('Equipment') }}
+                            </flux:sidebar.item>
+                        @endcan
+                        @can('stock.area', 'make-model')
+                            <flux:sidebar.item icon="tag" :href="route('stock.makes.index')" :current="request()->routeIs('stock.makes.*') || request()->routeIs('stock.models.*')" wire:navigate>
+                                {{ __('Makes & Models') }}
+                            </flux:sidebar.item>
+                        @endcan
+                    </flux:sidebar.group>
+                @endcan
+
+                @can('system.transport')
+                    <flux:sidebar.group :heading="__('Transport')" class="grid">
+                        @can('transport.area', 'vehicle')
+                            <flux:sidebar.item icon="truck" :href="route('transport.vehicles.index')" :current="request()->routeIs('transport.vehicles.*')" wire:navigate>
+                                {{ __('Vehicles') }}
+                            </flux:sidebar.item>
+                        @endcan
                     </flux:sidebar.group>
                 @endcan
             </flux:sidebar.nav>
 
             <flux:spacer />
-
-            <flux:sidebar.nav>
-                @can('system.setup')
-                    <flux:sidebar.group :heading="__('Setup')" class="grid">
-                        <flux:sidebar.item icon="cog-6-tooth" :href="route('setup.dashboard')" :current="request()->routeIs('setup.*')" wire:navigate>
-                            {{ __('Setup') }}
-                        </flux:sidebar.item>
-                    </flux:sidebar.group>
-                @endcan
-            </flux:sidebar.nav>
 
             <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
         </flux:sidebar>

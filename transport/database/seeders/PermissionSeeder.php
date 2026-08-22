@@ -30,42 +30,39 @@ class PermissionSeeder extends Seeder
 
             'admin.logs.browse',
 
-            // setup permissions
-            'setup.customer.create',
-            'setup.customer.update',
-            'setup.customer.delete',
-
-            'setup.site.create',
-            'setup.site.update',
-            'setup.site.delete',
-
-            'setup.equipment.create',
-            'setup.equipment.update',
-            'setup.equipment.delete',
-
-            'setup.vehicle.create',
-            'setup.vehicle.update',
-            'setup.vehicle.delete',
-
-            'setup.make.create',
-            'setup.make.update',
-            'setup.make.delete',
-
-            'setup.model.create',
-            'setup.model.update',
-            'setup.model.delete',
-
-            'setup.logs.browse',
-
-            // user permissions
-            'user.movement.create',
-            'user.movement.update',
-            'user.movement.delete',
-            'user.movement.schedule',
-            'user.movement.assign',
-            'user.movement.complete',
-            'user.movement.amend_completed',
+            // operations permissions
+            'operations.movement.create',
+            'operations.movement.update',
+            'operations.movement.delete',
+            'operations.movement.schedule',
+            'operations.movement.assign',
+            'operations.movement.complete',
+            'operations.movement.amend_completed',
             'user.document.issue',
+
+            // crm permissions
+            'crm.customer.create',
+            'crm.customer.update',
+            'crm.customer.delete',
+
+            'crm.site.create',
+            'crm.site.update',
+            'crm.site.delete',
+
+            // stock permissions
+            'stock.equipment.create',
+            'stock.equipment.update',
+            'stock.equipment.delete',
+
+            'stock.make-model.create',
+            'stock.make-model.update',
+            'stock.make-model.delete',
+
+            // transport permissions
+
+            'transport.vehicle.create',
+            'transport.vehicle.update',
+            'transport.vehicle.delete',
 
             // pwa permissions
             'pwa.driver',

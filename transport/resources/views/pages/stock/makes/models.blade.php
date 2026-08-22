@@ -2,6 +2,7 @@
 
 use App\Models\EquipmentModel;
 use App\Models\Make;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -14,6 +15,8 @@ new #[Title('Manage Models')] class extends Component
 
     public function save(): void
     {
+        Gate::authorize('stock.make-model.create');
+
         $this->validate([
             'name' => [
                 'required',
@@ -45,6 +48,8 @@ new #[Title('Manage Models')] class extends Component
 
     public function delete(int $modelId): void
     {
+        Gate::authorize('stock.make-model.delete');
+
         $model = $this->make
             ->equipmentModels()
             ->findOrFail($modelId);
@@ -78,7 +83,7 @@ new #[Title('Manage Models')] class extends Component
         {{ __('Manage Models') }}
     </flux:heading>
 
-    <x-pages::setup.layout
+    <x-pages::shared.layout
         :contentclass="__('mt-5 w-full max-w-5xl')"
     >
         <div class="space-y-6">
@@ -98,13 +103,13 @@ new #[Title('Manage Models')] class extends Component
                 <div class="flex gap-2">
                     <flux:button
                         variant="ghost"
-                        :href="route('setup.makes.index')"
+                        :href="route('stock.makes.index')"
                         wire:navigate
                     >
                         {{ __('Back') }}
                     </flux:button>
 
-                    @can('setup.model.create')
+                    @can('stock.make-model.create')
                         <flux:modal.trigger name="add-model-modal">
                             <flux:button
                                 variant="primary"
@@ -148,17 +153,17 @@ new #[Title('Manage Models')] class extends Component
                                     />
 
                                     <flux:menu>
-                                        @can('setup.model.update')
+                                        @can('stock.make-model.update')
                                             <flux:menu.item
                                                 icon="pencil"
-                                                :href="route('setup.models.update', $model)"
+                                                :href="route('stock.models.update', $model)"
                                                 wire:navigate
                                             >
                                                 {{ __('Manage') }}
                                             </flux:menu.item>
                                         @endcan
 
-                                        @can('setup.model.delete')
+                                        @can('stock.make-model.delete')
                                             <flux:menu.separator />
 
                                             <flux:menu.item
@@ -228,5 +233,5 @@ new #[Title('Manage Models')] class extends Component
             </form>
         </flux:modal>
 
-    </x-pages::setup.layout>
+    </x-pages::shared.layout>
 </section>

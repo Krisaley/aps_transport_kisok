@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Make;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -10,6 +11,8 @@ new #[Title('Create Make')] class extends Component
 
     public function save(): void
     {
+        Gate::authorize('stock.make-model.create');
+
         $this->validate([
             'name' => ['required', 'string', 'max:255', 'unique:makes,name'],
         ]);
@@ -24,7 +27,7 @@ new #[Title('Create Make')] class extends Component
         );
 
         $this->redirectRoute(
-            'setup.makes.models',
+            'stock.makes.models',
             $make,
             navigate: true
         );
@@ -39,7 +42,7 @@ new #[Title('Create Make')] class extends Component
 
     <flux:heading class="sr-only">{{ __('Create Make') }}</flux:heading>
 
-    <x-pages::setup.layout
+    <x-pages::shared.layout
         :contentclass="__('mt-5 w-full max-w-3xl')"
     >
         <div class="space-y-6">
@@ -50,7 +53,7 @@ new #[Title('Create Make')] class extends Component
 
                 <flux:button
                     variant="ghost"
-                    :href="route('setup.makes.index')"
+                    :href="route('stock.makes.index')"
                     wire:navigate
                 >
                     {{ __('Back') }}
@@ -67,7 +70,7 @@ new #[Title('Create Make')] class extends Component
                 <div class="flex justify-end gap-3">
                     <flux:button
                         variant="ghost"
-                        :href="route('setup.makes.index')"
+                        :href="route('stock.makes.index')"
                         wire:navigate
                     >
                         {{ __('Cancel') }}
@@ -82,5 +85,5 @@ new #[Title('Create Make')] class extends Component
                 </div>
             </form>
         </div>
-    </x-pages::setup.layout>
+    </x-pages::shared.layout>
 </section>
