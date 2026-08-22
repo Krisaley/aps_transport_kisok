@@ -24,6 +24,14 @@
                         </flux:sidebar.item>
                     </flux:sidebar.group>
                 @endcan
+
+                @can('setup.area', 'customers')
+                    <flux:sidebar.group :heading="__('CRM')" class="grid">
+                        <flux:sidebar.item icon="users" :href="route('setup.customers.index')" :current="request()->routeIs('setup.customers.*')" wire:navigate>
+                            {{ __('Customers') }}
+                        </flux:sidebar.item>
+                    </flux:sidebar.group>
+                @endcan
             </flux:sidebar.nav>
 
             <flux:spacer />
