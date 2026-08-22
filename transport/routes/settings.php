@@ -14,8 +14,14 @@ Route::middleware(['auth', 'system.admin', 'account.is_active'])->group(function
         ->middleware('can:admin.conf.update')
         ->name('settings.config');
     Route::livewire('settings/companies', 'pages::settings.companies.index')
-        ->middleware('can:admin.company.update')
+        ->middleware('can:admin.company.view')
         ->name('settings.companies.index');
+    Route::livewire('settings/companies/create', 'pages::settings.companies.form')
+        ->middleware('can:admin.company.create')
+        ->name('settings.companies.create');
+    Route::livewire('settings/companies/{company}/update', 'pages::settings.companies.form')
+        ->middleware('can:admin.company.update')
+        ->name('settings.companies.update');
 
     // user management area
     Route::livewire('settings/users', 'pages::settings.users.index')

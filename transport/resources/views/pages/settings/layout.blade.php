@@ -13,6 +13,9 @@
                 @can('admin.conf.update')
                     <flux:navlist.item :href="route('settings.config')" wire:navigate>{{ __('Configuration') }}</flux:navlist.item>
                 @endcan
+                @can('admin.company.view')
+                    <flux:navlist.item :href="route('settings.companies.index')" wire:navigate>{{ __('Companies / tenants') }}</flux:navlist.item>
+                @endcan
             </flux:navlist.group>
             
         </flux:navlist>

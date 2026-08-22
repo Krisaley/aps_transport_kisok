@@ -57,6 +57,8 @@ new #[Title('Users')] class extends Component {
             'users' => User::query()
                 ->with([
                     'roles',
+                    'company',
+                    'companies',
                 ])
                 ->where('email', '!=', 'super@admin.user')
                 ->when($this->search !== '', function ($query) {
@@ -228,6 +230,7 @@ new #[Title('Users')] class extends Component {
                         <flux:table.column sortable :sorted="$sortBy === 'name'" :direction="$sortDirection" wire:click="sort('name')">{{ __('Name') }}</flux:table.column>
                         <flux:table.column>{{ __('eMail') }}</flux:table.column>
                         <flux:table.column>{{ __('Roles') }}</flux:table.column>
+                        <flux:table.column>{{ __('Companies') }}</flux:table.column>
                         <flux:table.column align="end">{{ __('Actions') }}</flux:table.column>
                     </flux:table.columns>
 
@@ -248,6 +251,7 @@ new #[Title('Users')] class extends Component {
                                 <flux:table.cell class="whitespace-nowrap max-w-32 truncate">
                                     {{ $user->roles->pluck('name')->join(', ') ?: 'No Role' }}
                                 </flux:table.cell>
+                                <flux:table.cell class="max-w-48 truncate">{{ $user->companies->pluck('name')->push($user->company?->name)->filter()->unique()->join(', ') ?: 'None' }}<br><span class="text-xs text-zinc-500">Default: {{ $user->company?->name ?? 'Not set' }}</span></flux:table.cell>
                                 <flux:table.cell align="end">
                                     <flux:dropdown size="sm" variant="ghost" position="bottom" align="end">
                                         <flux:button icon="ellipsis-horizontal" variant="ghost" size="sm" />

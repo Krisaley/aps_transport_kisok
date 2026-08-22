@@ -1,25 +1,60 @@
 <?php
 
-use App\Models\{Company, Site};
+use App\Models\Company;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\Rule;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 new #[Title('Companies')] class extends Component {
-    public array $companies = [];
-    public function mount(): void { $this->companies = Company::orderBy('name')->get()->keyBy('id')->map(fn ($company) => $company->only(['name','code','address','home_site_id','email','phone','document_prefix','is_active']))->all(); }
-    public function save(): void
+    use WithPagination;
+
+    public string $search = '';
+    public ?int $deleteCompanyId = null;
+    public ?string $deleteCompanyName = null;
+
+    public function updatedSearch(): void { $this->resetPage(); }
+
+    public function confirmDelete(int $companyId): void
     {
-        Gate::authorize('admin.company.update');
-        $this->validate(['companies.*.name'=>['required','max:255'],'companies.*.code'=>['required','max:20'],'companies.*.address'=>['nullable','max:2000'],'companies.*.home_site_id'=>['nullable','integer'],'companies.*.email'=>['nullable','email'],'companies.*.phone'=>['nullable','max:100'],'companies.*.document_prefix'=>['required','max:20'],'companies.*.is_active'=>['boolean']]);
-        foreach ($this->companies as $id => $data) {
-            if ($data['home_site_id']) validator(['home_site_id'=>$data['home_site_id']], ['home_site_id'=>Rule::exists('sites','id')->where('company_id',$id)])->validate();
-            Company::findOrFail($id)->update($data);
-        }
-        Flux::toast(text:'Company settings saved',variant:'success');
+        Gate::authorize('admin.company.delete');
+        $company = Company::findOrFail($companyId);
+        $this->deleteCompanyId = $company->id;
+        $this->deleteCompanyName = $company->name;
+        Flux::modal('delete-company')->show();
     }
-    public function with(): array { return ['sitesByCompany'=>Site::orderBy('name')->get()->groupBy('company_id')]; }
+
+    public function deleteCompany(): void
+    {
+        Gate::authorize('admin.company.delete');
+        $company = Company::withCount(['movements', 'users'])->findOrFail($this->deleteCompanyId);
+        $references = collect([
+            'movements' => $company->movements_count,
+            'assigned users' => $company->users_count,
+            'default users' => $company->hasMany(\App\Models\User::class)->count(),
+            'customers' => $company->hasMany(\App\Models\Customer::class)->count(),
+            'sites' => $company->hasMany(\App\Models\Site::class)->count(),
+            'vehicles' => $company->hasMany(\App\Models\Vehicle::class)->count(),
+        ])->filter();
+
+        if ($references->isNotEmpty()) {
+            $this->addError('deleteCompany', 'This tenant cannot be deleted while it has '.$references->map(fn ($count, $label) => "{$count} {$label}")->join(', ').'. Reassign or remove those records first.');
+            return;
+        }
+
+        abort_if(Company::where('is_active', true)->count() <= 1 && $company->is_active, 422, 'The final active tenant cannot be deleted.');
+        $company->delete();
+        $this->reset(['deleteCompanyId', 'deleteCompanyName']);
+        Flux::modal('delete-company')->close();
+        Flux::toast(text: 'Company deleted', variant: 'success');
+    }
+
+    public function with(): array
+    {
+        return ['companies' => Company::query()->with('homeSite')->withCount(['users', 'movements'])
+            ->when($this->search !== '', fn ($query) => $query->where(fn ($query) => $query->where('name', 'like', '%'.$this->search.'%')->orWhere('code', 'like', '%'.$this->search.'%')))
+            ->orderBy('name')->paginate(10)];
+    }
 };
 ?>
-<section class="w-full p-6"><flux:heading size="xl">Companies and document branding</flux:heading><form wire:submit="save" class="mt-6 max-w-4xl space-y-6">@foreach($companies as $id=>$company)<flux:card wire:key="company-{{$id}}" class="grid gap-4 md:grid-cols-2"><flux:input wire:model="companies.{{$id}}.name" label="Company name"/><flux:input wire:model="companies.{{$id}}.code" label="Code"/><flux:textarea class="md:col-span-2" wire:model="companies.{{$id}}.address" label="Postal address"/><flux:select wire:model="companies.{{$id}}.home_site_id" label="Home depot site"><flux:select.option value="">Select home depot</flux:select.option>@foreach($sitesByCompany->get($id, collect()) as $site)<flux:select.option :value="$site->id">{{ $site->name }} — {{ $site->postcode }}</flux:select.option>@endforeach</flux:select><div></div><flux:input wire:model="companies.{{$id}}.email" label="Email"/><flux:input wire:model="companies.{{$id}}.phone" label="Phone"/><flux:input wire:model="companies.{{$id}}.document_prefix" label="Document prefix"/><flux:switch wire:model="companies.{{$id}}.is_active" label="Active"/></flux:card>@endforeach<div class="flex justify-end"><flux:button type="submit" variant="primary">Save company settings</flux:button></div></form></section>
+<section class="w-full">@include('partials.settings-heading',['section'=>'Companies / tenants'])<x-pages::settings.layout contentclass="mt-5 w-full max-w-5xl"><div class="space-y-5"><div class="flex items-center justify-between gap-4"><flux:input class="max-w-sm" wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Search companies..."/>@can('admin.company.create')<flux:button variant="primary" icon="plus" :href="route('settings.companies.create')">Add company</flux:button>@endcan</div><flux:table :paginate="$companies"><flux:table.columns><flux:table.column>Company</flux:table.column><flux:table.column>Home depot</flux:table.column><flux:table.column>Users</flux:table.column><flux:table.column>Movements</flux:table.column><flux:table.column>Status</flux:table.column><flux:table.column align="end">Actions</flux:table.column></flux:table.columns><flux:table.rows>@forelse($companies as $company)<flux:table.row :key="$company->id"><flux:table.cell><strong>{{ $company->name }}</strong><br><span class="text-xs text-zinc-500">{{ $company->code }}</span></flux:table.cell><flux:table.cell>{{ $company->homeSite?->name ?? 'Not set' }}</flux:table.cell><flux:table.cell>{{ $company->users_count }}</flux:table.cell><flux:table.cell>{{ $company->movements_count }}</flux:table.cell><flux:table.cell><flux:badge color="{{ $company->is_active ? 'green' : 'zinc' }}">{{ $company->is_active ? 'Active' : 'Inactive' }}</flux:badge></flux:table.cell><flux:table.cell align="end"><div class="flex justify-end gap-2">@can('admin.company.update')<flux:button size="sm" variant="ghost" :href="route('settings.companies.update',$company)">Manage</flux:button>@endcan @can('admin.company.delete')<flux:button size="sm" variant="danger" wire:click="confirmDelete({{ $company->id }})">Delete</flux:button>@endcan</div></flux:table.cell></flux:table.row>@empty<flux:table.row><flux:table.cell colspan="6" class="text-center">No companies found</flux:table.cell></flux:table.row>@endforelse</flux:table.rows></flux:table></div><flux:modal name="delete-company" class="min-w-[28rem]"><div class="space-y-5"><div><flux:heading size="lg">Delete {{ $deleteCompanyName }}?</flux:heading><flux:text class="mt-2">Only an empty tenant can be permanently deleted.</flux:text></div><flux:error name="deleteCompany"/><div class="flex justify-end gap-2"><flux:modal.close><flux:button variant="ghost">Cancel</flux:button></flux:modal.close><flux:button variant="danger" wire:click="deleteCompany">Delete company</flux:button></div></div></flux:modal></x-pages::settings.layout></section>

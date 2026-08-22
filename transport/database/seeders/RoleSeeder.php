@@ -32,7 +32,10 @@ class RoleSeeder extends Seeder
             'admin.role.update',
             'admin.role.delete',
             'admin.conf.update',
+            'admin.company.view',
+            'admin.company.create',
             'admin.company.update',
+            'admin.company.delete',
             'admin.logs.browse',
             // setup permissions
             'crm.customer.create',
@@ -103,6 +106,8 @@ class RoleSeeder extends Seeder
             'admin.role.create',
             'admin.role.update',
             'admin.conf.update',
+            'admin.company.view',
+            'admin.company.create',
             'admin.company.update',
             'admin.logs.browse',
             // setup permissions

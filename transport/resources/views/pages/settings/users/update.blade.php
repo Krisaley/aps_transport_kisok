@@ -9,6 +9,8 @@ use Flux\Flux;
 use Illuminate\Support\Carbon;
 
 use Illuminate\Support\Facades\DB;
+use App\Models\Company;
+use Illuminate\Validation\Rule;
 
 new #[Title('Update User')] class extends Component {
     
@@ -19,6 +21,8 @@ new #[Title('Update User')] class extends Component {
     public string $role = '';
     public bool $is_active = true;
     public array $selectedRoles = [];
+    public array $selectedCompanies = [];
+    public ?int $defaultCompanyId = null;
 
     public function mount(User $user):void
     {
@@ -30,6 +34,13 @@ new #[Title('Update User')] class extends Component {
         $this->is_active = (bool) $user->is_active;
 
         $this->selectedRoles = $user->roles->pluck('name')->toArray();
+        $this->selectedCompanies = $user->companies()->pluck('companies.id')->push($user->company_id)->filter()->unique()->values()->all();
+        $this->defaultCompanyId = $user->company_id;
+    }
+
+    public function updatedDefaultCompanyId($value): void
+    {
+        if ($value && ! in_array((int) $value, array_map('intval', $this->selectedCompanies), true)) $this->selectedCompanies[] = (int) $value;
     }
 
     public function save()
@@ -40,13 +51,18 @@ new #[Title('Update User')] class extends Component {
             'is_active'         => ['boolean'],
             'selectedRoles'     => ['array'],
             'selectedRoles.*'   => ['string', 'exists:roles,name'],
+            'selectedCompanies' => ['required', 'array', 'min:1'],
+            'selectedCompanies.*' => ['integer', Rule::exists('companies', 'id')->where('is_active', true)],
+            'defaultCompanyId' => ['required', 'integer', Rule::in(array_map('intval', $this->selectedCompanies))],
         ]);
 
         $this->user->update([
             'name'  => $this->name,
             'email' => $this->email,
             'is_active' => $this->is_active,
+            'company_id' => $this->defaultCompanyId,
         ]);
+        $this->user->companies()->sync(array_map('intval', $this->selectedCompanies));
 
         $this->user->syncRoles($this->selectedRoles);
 
@@ -127,6 +143,7 @@ new #[Title('Update User')] class extends Component {
                 ->where('name', '!=', 'Super-Admin')
                 ->orderBy('name')
                 ->get(),
+            'companies' => Company::where('is_active', true)->orderBy('name')->get(),
 
             'hasActivePasswordResetLink' => $this->hasActivePasswordResetLink(),
 
@@ -170,6 +187,7 @@ new #[Title('Update User')] class extends Component {
                     <flux:label>{{ __('Status') }}</flux:label>
                     <flux:switch wire:model="is_active" label="User can login" />
                 </div>
+                <div class="space-y-3"><flux:heading size="md">Companies / tenants</flux:heading><flux:text>Choose every company this user may access, then set their default.</flux:text><div class="grid gap-3 sm:grid-cols-2">@foreach($companies as $company)<label class="flex items-center gap-2"><flux:checkbox wire:model="selectedCompanies" :value="$company->id"/><span>{{ $company->name }}</span></label>@endforeach</div><flux:select wire:model.live="defaultCompanyId" label="Default company"><flux:select.option value="">Select default</flux:select.option>@foreach($companies as $company)<flux:select.option :value="$company->id">{{ $company->name }}</flux:select.option>@endforeach</flux:select><flux:error name="selectedCompanies"/><flux:error name="defaultCompanyId"/></div>
                 <div class="space-y-3">
                     <flux:heading size="md">{{ __('Roles') }}</flux:heading>
                     <div class="grid gap-3 sm:grid-cols-2">

@@ -26,7 +26,10 @@ class PermissionSeeder extends Seeder
             'admin.role.delete',
 
             'admin.conf.update',
+            'admin.company.view',
+            'admin.company.create',
             'admin.company.update',
+            'admin.company.delete',
 
             'admin.logs.browse',
 
