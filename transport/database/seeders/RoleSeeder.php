@@ -172,7 +172,7 @@ class RoleSeeder extends Seeder
         ]);
 
         $scheduler = Role::updateOrCreate(['name' => 'Scheduler']);
-        $scheduler->syncPermissions([
+        $scheduler->givePermissionTo([
             'crm.customer.create', 'crm.customer.update', 'crm.site.create', 'crm.site.update',
             'stock.equipment.create', 'stock.equipment.update',
             'operations.movement.create', 'operations.movement.update', 'operations.movement.schedule',
@@ -180,17 +180,17 @@ class RoleSeeder extends Seeder
         ]);
 
         $clerical = Role::updateOrCreate(['name' => 'Clerical-Admin']);
-        $clerical->syncPermissions([
+        $clerical->givePermissionTo([
             'crm.customer.create', 'crm.customer.update', 'crm.site.create', 'crm.site.update',
             'stock.equipment.create', 'stock.equipment.update',
             'operations.movement.create', 'operations.movement.update', 'user.document.issue', 'pwa.yard_receipt',
         ]);
 
         $systemAdmin = Role::updateOrCreate(['name' => 'System-Admin']);
-        $systemAdmin->syncPermissions(Permission::all());
+        $systemAdmin->givePermissionTo(Permission::all());
 
         $yard = Role::updateOrCreate(['name' => 'Yard']);
-        $yard->syncPermissions(['pwa.yard_receipt']);
+        $yard->givePermissionTo(['pwa.yard_receipt']);
 
     }
 }

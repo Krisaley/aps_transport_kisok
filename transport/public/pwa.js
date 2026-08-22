@@ -12,6 +12,10 @@
   const uuid = () => crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
   const statusLabel = status => status.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
   const nextStatus = { assigned:'en_route', en_route:'on_site', on_site:'collected', collected:'completed' };
+  let installPrompt = null;
+  window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); installPrompt = event; const button = $('#install-app'); if (button) button.hidden = false; });
+  $('#install-app')?.addEventListener('click', async () => { if (!installPrompt) return; await installPrompt.prompt(); installPrompt = null; $('#install-app').hidden = true; });
+  window.addEventListener('appinstalled', () => { installPrompt = null; const button = $('#install-app'); if (button) button.hidden = true; });
 
   function setConnectivity() {
     const online = navigator.onLine;

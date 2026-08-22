@@ -177,6 +177,7 @@ new #[Title('Makes & Models')] class extends Component
                                             <flux:button icon="ellipsis-horizontal" variant="ghost" size="sm" />
                                             <flux:menu>
                                                 <flux:menu.item icon="pencil" :href="route('stock.makes.update', $make)">{{ __('Manage') }}</flux:menu.item>
+                                                <flux:menu.item icon="plus" :href="route('stock.makes.models', $make)">{{ __('Add / manage models') }}</flux:menu.item>
                                             </flux:menu>
                                         </flux:dropdown>
                                     @endcan

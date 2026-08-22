@@ -5,6 +5,9 @@ use Livewire\Attributes\Title;
 use App\Models\Customer;
 use Flux\Flux;
 use Illuminate\Support\Facades\Gate;
+use App\Models\Site;
+use App\Support\CurrentCompany;
+use Illuminate\Validation\Rule;
 
 new #[Title('Create Customer')] class extends Component {
 
@@ -12,6 +15,10 @@ new #[Title('Create Customer')] class extends Component {
 
     public string $name             = '';
     public string $account_number   = '';
+    public ?int $home_site_id = null;
+    public ?int $company_id = null;
+
+    public function mount(CurrentCompany $currentCompany): void { $this->company_id=$currentCompany->id(auth()->user()); }
 
     public function save()
     {
@@ -20,12 +27,17 @@ new #[Title('Create Customer')] class extends Component {
         $this->validate([
             'name'              => ['required', 'string', 'max:255'],
             'account_number'    => ['required', 'string', 'max:255', 'unique:customers,account_number'],
+            'company_id' => ['required','integer','exists:companies,id'],
+            'home_site_id' => ['nullable',Rule::exists('sites','id')->where('company_id',$this->company_id)],
         ]);
 
         $customer = Customer::create([
             'name'              => $this->name,
             'account_number'    => $this->account_number,
+            'company_id' => $this->company_id,
+            'home_site_id' => $this->home_site_id,
         ]);
+        if ($this->home_site_id) Site::whereKey($this->home_site_id)->update(['customer_id'=>$customer->id]);
 
         Flux::toast(
             text: 'Customer has been created successfully',
@@ -37,7 +49,7 @@ new #[Title('Create Customer')] class extends Component {
 
     public function with(): array
     {
-        return [];
+        return ['sites'=>Site::where('company_id',$this->company_id)->whereNull('customer_id')->orderBy('name')->get()];
     }
 
 };
@@ -62,6 +74,7 @@ new #[Title('Create Customer')] class extends Component {
             <form wire:submit="save" class="space-y-6">
                 <flux:input label="Account Number" placeholder="Acc No" wire:model="account_number" />
                 <flux:input label="name" placeholder="Name" wire:model="name" />
+                <flux:select wire:model="home_site_id" variant="listbox" searchable label="Home address" placeholder="Select an existing site"><flux:select.option value="">Not set</flux:select.option>@foreach($sites as $site)<flux:select.option :value="$site->id">{{ $site->name }} — {{ $site->formattedAddress() }}</flux:select.option>@endforeach</flux:select>
                 
                 <div class="flex justify-end gap-3">
                     <flux:button variant="ghost" :href="route('crm.customers.index')" wire:navigate>{{ __('Cancel') }}</flux:button>

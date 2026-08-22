@@ -10,7 +10,7 @@
 <body>
 <div class="no-print"><button onclick="window.print()">Print / save PDF</button></div>
 <div class="head">
-    <div><h1>{{ $movement->company->name }}</h1><p>{!! nl2br(e($movement->company->address)) !!}<br>{{ $movement->company->phone }} · {{ $movement->company->email }}</p></div>
+    <div>@if($movement->company->logo_path)<img src="{{ public_path('storage/'.$movement->company->logo_path) }}" style="max-height:60px;max-width:220px" alt="">@endif<h1>{{ $movement->company->trading_name ?: $movement->company->name }}</h1><p>{{ $movement->company->homeSite?->formattedAddress() }}<br>{{ $movement->company->phone }} · {{ $movement->company->email }}</p>@if($movement->company->registration_number || $movement->company->vat_number)<p class="muted">Company No. {{ $movement->company->registration_number ?: '—' }} · VAT {{ $movement->company->vat_number ?: '—' }}</p>@endif</div>
     <div class="right"><h2>Equipment Delivery &amp; Collection</h2><strong>{{ str($type)->headline() }}</strong><br>{{ $movement->reference }}<br>{{ now()->format('d M Y H:i') }}</div>
 </div>
 

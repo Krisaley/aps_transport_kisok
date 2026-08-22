@@ -22,7 +22,7 @@ class MovementAction extends Model
 {
     use HasActivityLog;
 
-    protected $fillable = ['movement_id', 'sequence', 'action_type', 'site_id', 'driver_id', 'vehicle_id', 'schedule_start', 'schedule_end', 'arrived_at', 'departed_at', 'status', 'notes'];
+    protected $fillable = ['movement_id', 'sequence', 'action_type', 'site_id', 'contact_name', 'contact_number', 'access_instructions', 'driver_id', 'vehicle_id', 'schedule_start', 'schedule_end', 'arrived_at', 'departed_at', 'status', 'notes'];
 
     protected function casts(): array
     {

@@ -26,6 +26,7 @@ class Movement extends Model
         'status_reason',
         'movement_type',
         'notes',
+        'driver_notes',
         'completed_at',
         'planned_date',
         'schedule_start',

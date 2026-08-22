@@ -23,6 +23,13 @@ new #[Title('Update User')] class extends Component {
     public array $selectedRoles = [];
     public array $selectedCompanies = [];
     public ?int $defaultCompanyId = null;
+    public ?int $companyToAdd = null;
+    public ?string $roleToAdd = null;
+
+    public function addCompany(): void { if ($this->companyToAdd && !in_array($this->companyToAdd,array_map('intval',$this->selectedCompanies),true)) $this->selectedCompanies[]=$this->companyToAdd; $this->companyToAdd=null; Flux::modal('add-company')->close(); }
+    public function removeCompany(int $id): void { if ($id===$this->defaultCompanyId) { $this->addError('defaultCompanyId','Choose a different default before removing this company.'); return; } $this->selectedCompanies=array_values(array_filter($this->selectedCompanies,fn($value)=>(int)$value!==$id)); }
+    public function addRole(): void { if ($this->roleToAdd && !in_array($this->roleToAdd,$this->selectedRoles,true)) $this->selectedRoles[]=$this->roleToAdd; $this->roleToAdd=null; Flux::modal('add-role')->close(); }
+    public function removeRole(string $name): void { $this->selectedRoles=array_values(array_filter($this->selectedRoles,fn($value)=>$value!==$name)); }
 
     public function mount(User $user):void
     {
@@ -187,15 +194,10 @@ new #[Title('Update User')] class extends Component {
                     <flux:label>{{ __('Status') }}</flux:label>
                     <flux:switch wire:model="is_active" label="User can login" />
                 </div>
-                <div class="space-y-3"><flux:heading size="md">Companies / tenants</flux:heading><flux:text>Choose every company this user may access, then set their default.</flux:text><div class="grid gap-3 sm:grid-cols-2">@foreach($companies as $company)<label class="flex items-center gap-2"><flux:checkbox wire:model="selectedCompanies" :value="$company->id"/><span>{{ $company->name }}</span></label>@endforeach</div><flux:select wire:model.live="defaultCompanyId" label="Default company"><flux:select.option value="">Select default</flux:select.option>@foreach($companies as $company)<flux:select.option :value="$company->id">{{ $company->name }}</flux:select.option>@endforeach</flux:select><flux:error name="selectedCompanies"/><flux:error name="defaultCompanyId"/></div>
+                <div class="space-y-3"><div class="flex items-center justify-between"><flux:heading size="md">Companies / tenants</flux:heading><flux:modal.trigger name="add-company"><flux:button type="button" size="sm" icon="plus">Add tenant</flux:button></flux:modal.trigger></div><flux:table><flux:table.columns><flux:table.column>Tenant</flux:table.column><flux:table.column>Default</flux:table.column><flux:table.column></flux:table.column></flux:table.columns><flux:table.rows>@foreach($companies->whereIn('id',array_map('intval',$selectedCompanies)) as $company)<flux:table.row :key="$company->id"><flux:table.cell>{{ $company->name }}</flux:table.cell><flux:table.cell><flux:radio wire:model.live="defaultCompanyId" :value="$company->id" label="Default"/></flux:table.cell><flux:table.cell align="end"><flux:button type="button" size="xs" variant="danger" wire:click="removeCompany({{ $company->id }})">Remove</flux:button></flux:table.cell></flux:table.row>@endforeach</flux:table.rows></flux:table><flux:error name="selectedCompanies"/><flux:error name="defaultCompanyId"/></div>
                 <div class="space-y-3">
                     <flux:heading size="md">{{ __('Roles') }}</flux:heading>
-                    <div class="grid gap-3 sm:grid-cols-2">
-                        @foreach ($roles as $role)
-                            <flux:checkbox wire:model="selectedRoles" value="{{ $role->name }}" />
-                            <span class="text-sm">{{ $role->name }}</span>
-                        @endforeach
-                    </div>
+                    <div class="flex justify-end"><flux:modal.trigger name="add-role"><flux:button type="button" size="sm" icon="plus">Add role</flux:button></flux:modal.trigger></div><flux:table><flux:table.columns><flux:table.column>Role</flux:table.column><flux:table.column></flux:table.column></flux:table.columns><flux:table.rows>@foreach($selectedRoles as $selectedRole)<flux:table.row :key="$selectedRole"><flux:table.cell>{{ $selectedRole }}</flux:table.cell><flux:table.cell align="end"><flux:button type="button" size="xs" variant="danger" wire:click="removeRole('{{ $selectedRole }}')">Remove</flux:button></flux:table.cell></flux:table.row>@endforeach</flux:table.rows></flux:table>
                 </div>
                 
                 <div class="flex justify-end gap-3">
@@ -206,6 +208,8 @@ new #[Title('Update User')] class extends Component {
         </div>
 
         {{-- Reset Password Modal --}}
+        <flux:modal name="add-company" class="min-w-[24rem]"><div class="space-y-5"><flux:heading size="lg">Assign tenant</flux:heading><flux:select wire:model="companyToAdd" variant="listbox" searchable label="Tenant"><flux:select.option value="">Select tenant</flux:select.option>@foreach($companies->whereNotIn('id',array_map('intval',$selectedCompanies)) as $company)<flux:select.option :value="$company->id">{{ $company->name }}</flux:select.option>@endforeach</flux:select><div class="flex justify-end gap-2"><flux:modal.close><flux:button variant="ghost">Cancel</flux:button></flux:modal.close><flux:button type="button" variant="primary" wire:click="addCompany">Add</flux:button></div></div></flux:modal>
+        <flux:modal name="add-role" class="min-w-[24rem]"><div class="space-y-5"><flux:heading size="lg">Assign role</flux:heading><flux:select wire:model="roleToAdd" variant="listbox" searchable label="Role"><flux:select.option value="">Select role</flux:select.option>@foreach($roles->whereNotIn('name',$selectedRoles) as $role)<flux:select.option :value="$role->name">{{ $role->name }}</flux:select.option>@endforeach</flux:select><div class="flex justify-end gap-2"><flux:modal.close><flux:button variant="ghost">Cancel</flux:button></flux:modal.close><flux:button type="button" variant="primary" wire:click="addRole">Add</flux:button></div></div></flux:modal>
         <flux:modal name="reset-password" class="min-w-[22rem]">
             <div class="space-y-6">
                 <div>

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Company extends Model
 {
-    protected $fillable = ['code', 'name', 'address', 'home_site_id', 'email', 'phone', 'document_prefix', 'next_document_number', 'logo_path', 'is_active'];
+    protected $fillable = ['code', 'name', 'trading_name', 'address', 'home_site_id', 'email', 'phone', 'document_prefix', 'registration_number', 'vat_number', 'next_document_number', 'logo_path', 'brand_primary_color', 'is_active'];
 
     /** @return BelongsTo<Site, $this> */
     public function homeSite(): BelongsTo

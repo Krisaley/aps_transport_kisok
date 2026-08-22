@@ -20,9 +20,16 @@ class Site extends Model
         'postcode',
         'what_3_words',
         'address_code',
+        'google_place_id',
+        'access_instructions',
         'company_id',
         'customer_id',
     ];
+
+    public function formattedAddress(): string
+    {
+        return collect([$this->address_line_1, $this->address_line_2, $this->town, $this->county, $this->postcode])->filter()->join(', ');
+    }
 
     /** @return BelongsTo<Customer, $this> */
     public function customer(): BelongsTo

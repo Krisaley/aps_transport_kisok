@@ -13,7 +13,7 @@
     <header class="sticky top-0 z-10 bg-slate-900 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-white shadow">
         <div class="mx-auto flex max-w-3xl items-center justify-between">
             <div><p class="text-xs uppercase tracking-widest text-slate-300">APS Transport</p><h1 class="text-lg font-semibold">Mobile jobs</h1></div>
-            <span id="connection-state" class="rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold">Online</span>
+            <div class="flex items-center gap-2"><button id="install-app" hidden class="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-900">Install app</button><span id="connection-state" class="rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold">Online</span></div>
         </div>
     </header>
 

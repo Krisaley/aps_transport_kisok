@@ -14,6 +14,8 @@ class Vehicle extends Model
         'is_active',
         'name',
         'registration',
+        'company_id',
+        'capacity_tonnes',
     ];
 
     protected function casts(): array
