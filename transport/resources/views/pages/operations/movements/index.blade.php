@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Movement;
+use App\Support\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Livewire\Attributes\Session;
 use Livewire\Attributes\Title;
@@ -28,13 +29,14 @@ new #[Title('Movements')] class extends Component {
         }
     }
 
-    public function with(): array
+    public function with(CurrentCompany $currentCompany): array
     {
+        $companyId = $currentCompany->id(auth()->user());
         $anchor=CarbonImmutable::parse($this->anchorDate ?: now());
         [$start,$end]=match($this->calendarView){'day'=>[$anchor->startOfDay(),$anchor->endOfDay()],'month'=>[$anchor->startOfMonth()->startOfWeek(),$anchor->endOfMonth()->endOfWeek()],default=>[$anchor->startOfWeek(),$anchor->endOfWeek()]};
-        $scheduled=Movement::query()->with(['customer','actions.site','actions.driver','actions.vehicle'])->whereBetween('schedule_start',[$start,$end])->orderBy('schedule_start')->get()->groupBy(fn($m)=>$m->schedule_start->toDateString());
+        $scheduled=Movement::query()->where('company_id', $companyId)->with(['customer','actions.site','actions.driver','actions.vehicle'])->whereBetween('schedule_start',[$start,$end])->orderBy('schedule_start')->get()->groupBy(fn($m)=>$m->schedule_start->toDateString());
         $days=collect(\Carbon\CarbonPeriod::create($start->startOfDay(),$end->startOfDay()))->map(fn($d)=>CarbonImmutable::instance($d));
-        return ['scheduled'=>$scheduled,'calendarDays'=>$days,'rangeLabel'=>$this->calendarView==='day'?$start->format('l d F Y'):($this->calendarView==='month'?$anchor->format('F Y'):$start->format('d M').' – '.$end->format('d M Y')),'movements' => Movement::query()
+        return ['scheduled'=>$scheduled,'calendarDays'=>$days,'rangeLabel'=>$this->calendarView==='day'?$start->format('l d F Y'):($this->calendarView==='month'?$anchor->format('F Y'):$start->format('d M').' – '.$end->format('d M Y')),'movements' => Movement::query()->where('company_id', $companyId)
             ->with(['customer', 'deliverySite', 'collectionSite', 'driver', 'vehicle'])
             ->when($this->search !== '', function ($query) {
                 $query->where(function ($query) {
@@ -57,7 +59,7 @@ new #[Title('Movements')] class extends Component {
         <div class="mb-4 flex flex-wrap gap-2">
             <flux:input class="min-w-64 flex-1" wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Search movements..." />
             <flux:select wire:model.live="statusFilter"><flux:select.option value="all">{{ __('All statuses') }}</flux:select.option>@foreach(\App\Enums\MovementStatus::cases() as $status)<flux:select.option :value="$status->value">{{ $status->label() }}</flux:select.option>@endforeach</flux:select>
-            <flux:select wire:model.live="typeFilter"><flux:select.option value="all">{{ __('All types') }}</flux:select.option><flux:select.option value="delivery">{{ __('Delivery') }}</flux:select.option><flux:select.option value="collection">{{ __('Collection') }}</flux:select.option><flux:select.option value="site_to_site">{{ __('Site to site') }}</flux:select.option></flux:select>
+            <flux:select wire:model.live="typeFilter"><flux:select.option value="all">{{ __('All types') }}</flux:select.option><flux:select.option value="delivery">{{ __('Delivery') }}</flux:select.option><flux:select.option value="collection">{{ __('Collection') }}</flux:select.option><flux:select.option value="exchange">{{ __('Exchange') }}</flux:select.option><flux:select.option value="site_to_site">{{ __('Site to site') }}</flux:select.option></flux:select>
             @can('operations.movement.create')<flux:button variant="primary" :href="route('operations.movements.create')">Add Movement</flux:button>@endcan
         </div>
         <flux:card class="mb-5">

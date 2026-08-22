@@ -69,7 +69,22 @@
             </flux:sidebar.nav>
 
             <flux:spacer />
-
+            @php
+                $companyContext = app(\App\Support\CurrentCompany::class);
+                $availableCompanies = $companyContext->availableFor(auth()->user());
+                $activeCompanyId = $availableCompanies->isNotEmpty() ? $companyContext->id(auth()->user()) : null;
+            @endphp
+            @if ($availableCompanies->isNotEmpty())
+                <form method="POST" action="{{ route('operations.company.update') }}" class="px-2 pb-3">
+                    @csrf
+                    <flux:select name="company_id" label="Active company / depot" onchange="this.form.submit()">
+                        @foreach ($availableCompanies as $company)
+                            <flux:select.option :value="$company->id" :selected="$company->id === $activeCompanyId">{{ $company->name }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                    <noscript><flux:button type="submit" size="sm" class="mt-2">Switch</flux:button></noscript>
+                </form>
+            @endif
             <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
         </flux:sidebar>
 
@@ -86,6 +101,17 @@
                 />
 
                 <flux:menu>
+                    @if ($availableCompanies->isNotEmpty())
+                        <form method="POST" action="{{ route('operations.company.update') }}" class="px-2 py-2">
+                            @csrf
+                            <flux:select name="company_id" label="Active company / depot" onchange="this.form.submit()">
+                                @foreach ($availableCompanies as $company)
+                                    <flux:select.option :value="$company->id" :selected="$company->id === $activeCompanyId">{{ $company->name }}</flux:select.option>
+                                @endforeach
+                            </flux:select>
+                        </form>
+                        <flux:menu.separator />
+                    @endif
                     <flux:menu.radio.group>
                         <div class="p-0 text-sm font-normal">
                             <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">

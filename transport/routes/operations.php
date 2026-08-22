@@ -1,9 +1,12 @@
 <?php
 
+use App\Http\Controllers\CurrentCompanyController;
 use App\Http\Controllers\MovementDocumentController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'can:system.operations', 'account.is_active'])->group(function () {
+
+    Route::post('operations/company', [CurrentCompanyController::class, 'update'])->name('operations.company.update');
 
     Route::get('operations/movements/{movement}/documents/{type}/preview', [MovementDocumentController::class, 'preview'])->name('documents.preview');
     Route::post('operations/movements/{movement}/documents/{type}', [MovementDocumentController::class, 'issue'])->name('documents.issue');

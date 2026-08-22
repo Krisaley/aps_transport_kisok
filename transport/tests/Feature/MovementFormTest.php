@@ -16,6 +16,32 @@ class MovementFormTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_standard_routes_are_assumed_from_the_active_company_and_customer(): void
+    {
+        $company = Company::create(['code' => 'APS', 'name' => 'APS', 'is_active' => true]);
+        $role = Role::create(['name' => 'Super-Admin', 'guard_name' => 'web', 'is_active' => true]);
+        $user = User::factory()->create(['company_id' => $company->id, 'is_active' => true]);
+        $user->assignRole($role);
+        $customer = Customer::create(['company_id' => $company->id, 'account_number' => 'C1', 'name' => 'Customer']);
+        $depot = Site::create(['company_id' => $company->id, 'name' => 'Depot', 'address_line_1' => 'Depot Road', 'postcode' => 'PE1']);
+        $customerSite = Site::create(['company_id' => $company->id, 'customer_id' => $customer->id, 'name' => 'Customer home', 'address_line_1' => 'Site Road', 'postcode' => 'PE2']);
+        $company->update(['home_site_id' => $depot->id]);
+
+        Livewire::actingAs($user)->test('pages::operations.movements.form')
+            ->set('customer_id', $customer->id)
+            ->assertSet('actions.0.site_id', $depot->id)
+            ->assertSet('actions.1.site_id', $customerSite->id)
+            ->set('movement_type', 'collection')
+            ->assertSet('actions.0.site_id', $customerSite->id)
+            ->assertSet('actions.1.site_id', $depot->id)
+            ->set('movement_type', 'exchange')
+            ->assertCount('actions', 4)
+            ->assertSet('actions.0.site_id', $depot->id)
+            ->assertSet('actions.1.site_id', $customerSite->id)
+            ->assertSet('actions.2.site_id', $customerSite->id)
+            ->assertSet('actions.3.site_id', $depot->id);
+    }
+
     public function test_site_to_site_chain_saves_collection_and_delivery_for_each_machine(): void
     {
         $company = Company::create(['code' => 'APS', 'name' => 'APS', 'is_active' => true]);

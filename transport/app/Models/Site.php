@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Concerns\HasActivityLog;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Site extends Model
@@ -20,7 +21,14 @@ class Site extends Model
         'what_3_words',
         'address_code',
         'company_id',
+        'customer_id',
     ];
+
+    /** @return BelongsTo<Customer, $this> */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
 
     /** @return HasMany<Movement, $this> */
     public function deliveryMovements(): HasMany

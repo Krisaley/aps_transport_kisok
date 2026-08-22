@@ -3,6 +3,7 @@
 use App\Enums\MovementStatus;
 use App\Models\{Company, Customer, Movement, Site, User, Vehicle};
 use App\Services\MovementWorkflow;
+use App\Support\CurrentCompany;
 use Illuminate\Support\Facades\{Auth, DB, Gate};
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -25,12 +26,13 @@ new #[Title('Movement')] class extends Component {
     public array $actions = [];
     public array $items = [];
 
-    public function mount(?Movement $movement = null): void
+    public function mount(CurrentCompany $currentCompany, ?Movement $movement = null): void
     {
         $this->movement = $movement;
+        $activeCompanyId = $currentCompany->id(Auth::user());
 
         if ($movement) {
-            abort_unless(Auth::user()->canAccessCompany((int) $movement->company_id), 403);
+            abort_unless((int) $movement->company_id === $activeCompanyId, 404);
             $movement->load(['actions', 'items.accessories']);
 
             foreach (['company_id', 'reference', 'movement_type', 'advice_note', 'job_number', 'contact_name', 'contact_number', 'notes', 'customer_id'] as $field) {
@@ -57,6 +59,7 @@ new #[Title('Movement')] class extends Component {
                     'id' => $item->id,
                     'collection_action_index' => $item->collection_action_id ? $actionIndexes->get($item->collection_action_id) : ($item->movement_action === 'collection' ? $legacyIndex : null),
                     'delivery_action_index' => $item->delivery_action_id ? $actionIndexes->get($item->delivery_action_id) : ($item->movement_action === 'delivery' ? $legacyIndex : null),
+                    'leg' => $this->movement_type === 'exchange' && $item->collectionAction?->sequence >= 3 ? 'collection' : 'delivery',
                     'stock_number' => $item->stock_number,
                     'serial_number' => $item->serial_number,
                     'description' => $item->description,
@@ -67,12 +70,61 @@ new #[Title('Movement')] class extends Component {
             return;
         }
 
-        $user = Auth::user();
-        $this->company_id = $user->company_id ?? ($user->hasRole('Super-Admin') ? Company::value('id') : $user->companies()->value('companies.id'));
+        $this->company_id = $activeCompanyId;
         $this->reference = 'MOV-'.now()->format('Ymd-His');
-        $this->addAction('collection');
-        $this->addAction('delivery');
+        $this->applyStandardRoute();
         $this->addItem();
+    }
+
+    public function updatedMovementType(): void
+    {
+        $this->applyStandardRoute();
+    }
+
+    public function updatedCustomerId(): void
+    {
+        $this->applyStandardRoute();
+    }
+
+    public function updatedItems(mixed $value, ?string $key = null): void
+    {
+        if ($key && str_ends_with($key, '.leg') && $this->movement_type === 'exchange') {
+            $index = (int) str($key)->before('.');
+            $this->assignItemRoute($index);
+        }
+    }
+
+    private function applyStandardRoute(): void
+    {
+        if ($this->movement?->status->locksRouting()) {
+            return;
+        }
+
+        $homeSiteId = Company::find($this->company_id)?->home_site_id;
+        $customerSiteId = Site::where('company_id', $this->company_id)->where('customer_id', $this->customer_id)->orderBy('name')->value('id');
+        $route = match ($this->movement_type) {
+            'collection' => [['collection', $customerSiteId], ['delivery', $homeSiteId]],
+            'exchange' => [['collection', $homeSiteId], ['delivery', $customerSiteId], ['collection', $customerSiteId], ['delivery', $homeSiteId]],
+            'site_to_site' => [['collection', null], ['delivery', null]],
+            default => [['collection', $homeSiteId], ['delivery', $customerSiteId]],
+        };
+
+        $this->actions = collect($route)->map(fn ($stop) => [
+            'id' => null, 'action_type' => $stop[0], 'site_id' => $stop[1], 'driver_id' => null,
+            'vehicle_id' => null, 'schedule_start' => null, 'schedule_end' => null, 'notes' => null,
+        ])->all();
+
+        foreach (array_keys($this->items) as $index) {
+            $this->assignItemRoute($index);
+        }
+    }
+
+    private function assignItemRoute(int $index): void
+    {
+        $leg = $this->items[$index]['leg'] ?? 'delivery';
+        [$collection, $delivery] = $this->movement_type === 'exchange' && $leg === 'collection' ? [2, 3] : [0, 1];
+        $this->items[$index]['collection_action_index'] = $collection;
+        $this->items[$index]['delivery_action_index'] = $delivery;
     }
 
     public function addAction(string $type = 'collection'): void
@@ -116,6 +168,7 @@ new #[Title('Movement')] class extends Component {
 
         $this->items[] = [
             'id' => null,
+            'leg' => 'delivery',
             'collection_action_index' => $collectionIndex === false ? null : $collectionIndex,
             'delivery_action_index' => $deliveryIndex === false ? null : $deliveryIndex,
             'stock_number' => null,
@@ -131,16 +184,16 @@ new #[Title('Movement')] class extends Component {
         $this->items = array_values($this->items);
     }
 
-    public function save(): mixed
+    public function save(CurrentCompany $currentCompany): mixed
     {
         Gate::authorize($this->movement ? 'operations.movement.update' : 'operations.movement.create');
-        abort_unless(Auth::user()->canAccessCompany((int) $this->company_id), 403);
+        abort_unless((int) $this->company_id === $currentCompany->id(Auth::user()), 403);
 
         $data = $this->validate([
             'company_id' => ['required', 'exists:companies,id'],
             'reference' => ['required', 'max:255', Rule::unique('movements')->ignore($this->movement?->id)],
-            'movement_type' => ['required', Rule::in(['delivery', 'collection', 'site_to_site'])],
-            'customer_id' => ['required', 'exists:customers,id'],
+            'movement_type' => ['required', Rule::in(['delivery', 'collection', 'exchange', 'site_to_site'])],
+            'customer_id' => ['required', Rule::exists('customers', 'id')->where('company_id', $this->company_id)],
             'advice_note' => ['nullable', 'max:255'],
             'job_number' => ['nullable', 'max:255'],
             'contact_name' => ['nullable', 'max:255'],
@@ -149,7 +202,7 @@ new #[Title('Movement')] class extends Component {
             'actions' => ['required', 'array', 'min:2'],
             'actions.*.id' => ['nullable'],
             'actions.*.action_type' => ['required', Rule::in(['collection', 'delivery'])],
-            'actions.*.site_id' => ['required', 'exists:sites,id'],
+            'actions.*.site_id' => ['required', Rule::exists('sites', 'id')->where('company_id', $this->company_id)],
             'actions.*.driver_id' => ['nullable', 'exists:users,id'],
             'actions.*.vehicle_id' => ['nullable', 'exists:vehicles,id'],
             'actions.*.schedule_start' => ['nullable', 'date'],
@@ -157,6 +210,7 @@ new #[Title('Movement')] class extends Component {
             'actions.*.notes' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['nullable'],
+            'items.*.leg' => ['nullable', Rule::in(['delivery', 'collection'])],
             'items.*.collection_action_index' => ['required', 'integer', 'min:0'],
             'items.*.delivery_action_index' => ['required', 'integer', 'min:0'],
             'items.*.stock_number' => ['nullable', 'max:255'],
@@ -212,7 +266,7 @@ new #[Title('Movement')] class extends Component {
                 $deliveryActionId = $actionIds[$row['delivery_action_index']];
                 $item = $this->movement->items()->updateOrCreate(
                     ['id' => $row['id'] ?? null],
-                    collect($row)->except(['id', 'accessories', 'collection_action_index', 'delivery_action_index'])->merge([
+                    collect($row)->except(['id', 'leg', 'accessories', 'collection_action_index', 'delivery_action_index'])->merge([
                         'movement_action_id' => $deliveryActionId,
                         'collection_action_id' => $collectionActionId,
                         'delivery_action_id' => $deliveryActionId,
@@ -322,17 +376,20 @@ new #[Title('Movement')] class extends Component {
         Flux::toast(text: 'Status updated', variant: 'success');
     }
 
-    public function with(): array
+    public function with(CurrentCompany $currentCompany): array
     {
-        $user = Auth::user();
-        $companyIds = $user->hasRole('Super-Admin') ? Company::pluck('id') : $user->companies()->pluck('companies.id')->push($user->company_id)->filter()->unique();
+        $companyId = $currentCompany->id(Auth::user());
+        $company = $companyId
+            ? Company::with('homeSite')->findOrFail($companyId)
+            : new Company(['name' => 'No active company']);
 
         return [
-            'companies' => Company::whereIn('id', $companyIds)->where('is_active', true)->orderBy('name')->get(),
-            'customers' => Customer::orderBy('name')->get(),
-            'sites' => Site::orderBy('name')->get(),
-            'drivers' => User::whereHas('roles', fn ($query) => $query->where('name', 'Driver'))->where('is_active', true)->orderBy('name')->get(),
-            'vehicles' => Vehicle::where('is_active', true)->orderBy('name')->get(),
+            'activeCompany' => $company,
+            'customers' => Customer::where('company_id', $companyId)->orderBy('name')->get(),
+            'sites' => Site::where('company_id', $companyId)->orderBy('name')->get(),
+            'customerSites' => Site::where('company_id', $companyId)->where('customer_id', $this->customer_id)->orderBy('name')->get(),
+            'drivers' => User::where(fn ($query) => $query->where('company_id', $companyId)->orWhereHas('companies', fn ($query) => $query->whereKey($companyId)))->whereHas('roles', fn ($query) => $query->where('name', 'Driver'))->where('is_active', true)->orderBy('name')->get(),
+            'vehicles' => Vehicle::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get(),
         ];
     }
 };
@@ -352,33 +409,32 @@ new #[Title('Movement')] class extends Component {
 
     <form wire:submit="save" class="mx-auto max-w-6xl space-y-6">
         <flux:card class="grid gap-4 md:grid-cols-3">
-            <flux:select wire:model="company_id" label="Company">@foreach ($companies as $company)<flux:select.option :value="$company->id">{{ $company->name }}</flux:select.option>@endforeach</flux:select>
+            <div><flux:text>Active company / depot</flux:text><flux:heading size="sm">{{ $activeCompany->name }}</flux:heading></div>
             <flux:input wire:model="reference" label="Reference" required />
-            <flux:select wire:model="movement_type" label="Type"><flux:select.option value="delivery">Delivery</flux:select.option><flux:select.option value="collection">Collection</flux:select.option><flux:select.option value="site_to_site">Site to site</flux:select.option></flux:select>
-            <flux:select wire:model="customer_id" label="Customer">@foreach ($customers as $customer)<flux:select.option :value="$customer->id">{{ $customer->name }}</flux:select.option>@endforeach</flux:select>
+            <flux:select wire:model.live="movement_type" label="Type"><flux:select.option value="delivery">Delivery</flux:select.option><flux:select.option value="collection">Collection</flux:select.option><flux:select.option value="exchange">Exchange</flux:select.option><flux:select.option value="site_to_site">Site to site</flux:select.option></flux:select>
+            <flux:select wire:model.live="customer_id" label="Customer"><flux:select.option value="">Select customer</flux:select.option>@foreach ($customers as $customer)<flux:select.option :value="$customer->id">{{ $customer->name }}</flux:select.option>@endforeach</flux:select>
             <flux:input wire:model="advice_note" label="Advice note" /><flux:input wire:model="job_number" label="Job number" /><flux:input wire:model="contact_name" label="Contact" /><flux:input wire:model="contact_number" label="Phone" /><flux:textarea class="md:col-span-3" wire:model="notes" label="Instructions" />
         </flux:card>
 
-        <div class="flex justify-between"><div><flux:heading size="lg">Route actions</flux:heading><flux:text>Use only Collect and Deliver actions, in journey order.</flux:text></div><div class="flex gap-2"><flux:button type="button" wire:click="addAction('collection')">Add collection</flux:button><flux:button type="button" wire:click="addAction('delivery')">Add delivery</flux:button></div></div>
+        <div><flux:heading size="lg">Addresses</flux:heading><flux:text>The active depot and selected customer are applied automatically for standard movements.</flux:text></div>
+        @if (!$activeCompany->home_site_id && $movement_type !== 'site_to_site')<flux:callout variant="warning">Set a home depot site on {{ $activeCompany->name }} before saving standard movements.</flux:callout>@endif
         @error('actions')<flux:callout variant="danger">{{ $message }}</flux:callout>@enderror
         @foreach ($actions as $index => $action)
             <flux:card wire:key="action-{{ $index }}" class="grid gap-4 md:grid-cols-3">
-                <div class="md:col-span-3 flex items-center justify-between"><flux:heading size="sm">{{ $index + 1 }}. {{ str($action['action_type'])->headline() }}</flux:heading>@if(count($actions) > 2)<flux:button type="button" variant="danger" wire:click="removeAction({{ $index }})">Remove</flux:button>@endif</div>
-                <flux:select wire:model.live="actions.{{ $index }}.action_type" label="Action"><flux:select.option value="collection">Collect</flux:select.option><flux:select.option value="delivery">Deliver</flux:select.option></flux:select>
-                <flux:select wire:model.live="actions.{{ $index }}.site_id" label="Location">@foreach ($sites as $site)<flux:select.option :value="$site->id">{{ $site->name }} — {{ $site->postcode }}</flux:select.option>@endforeach</flux:select>
+                <div class="md:col-span-3"><flux:heading size="sm">{{ $index + 1 }}. {{ str($action['action_type'])->headline() }}</flux:heading></div>
+                <flux:select wire:model.live="actions.{{ $index }}.site_id" label="Location"><flux:select.option value="">Select address</flux:select.option>@foreach ($sites as $site)<flux:select.option :value="$site->id">{{ $site->name }} — {{ $site->postcode }}</flux:select.option>@endforeach</flux:select>
                 <flux:select wire:model="actions.{{ $index }}.driver_id" label="Driver"><flux:select.option value="">Unassigned</flux:select.option>@foreach ($drivers as $driver)<flux:select.option :value="$driver->id">{{ $driver->name }}</flux:select.option>@endforeach</flux:select>
                 <flux:select wire:model="actions.{{ $index }}.vehicle_id" label="Vehicle"><flux:select.option value="">Unassigned</flux:select.option>@foreach ($vehicles as $vehicle)<flux:select.option :value="$vehicle->id">{{ $vehicle->name }} — {{ $vehicle->registration }}</flux:select.option>@endforeach</flux:select>
                 <flux:input wire:model="actions.{{ $index }}.schedule_start" type="datetime-local" label="Start / earliest" /><flux:input wire:model="actions.{{ $index }}.schedule_end" type="datetime-local" label="End / latest" /><flux:textarea class="md:col-span-3" wire:model="actions.{{ $index }}.notes" label="Notes" /><div class="md:col-span-3"><flux:error name="actions.{{ $index }}.action_type" /></div>
             </flux:card>
         @endforeach
 
-        <div class="flex justify-between"><div><flux:heading size="lg">Machines and accessories</flux:heading><flux:text>Choose where each machine is collected and where it is delivered.</flux:text></div><flux:button type="button" wire:click="addItem">Add machine</flux:button></div>
+        <div class="flex justify-between"><div><flux:heading size="lg">Machines and accessories</flux:heading><flux:text>List the machines included in this {{ str($movement_type)->replace('_', ' ') }}.</flux:text></div><flux:button type="button" wire:click="addItem">Add machine</flux:button></div>
         @error('items')<flux:callout variant="danger">{{ $message }}</flux:callout>@enderror
         @foreach ($items as $index => $item)
             <flux:card wire:key="item-{{ $index }}" class="grid gap-4 md:grid-cols-4">
                 <flux:input wire:model="items.{{ $index }}.stock_number" label="Stock number" /><flux:input wire:model="items.{{ $index }}.serial_number" label="Serial number" /><flux:input class="md:col-span-2" wire:model="items.{{ $index }}.description" label="Description" required />
-                <flux:select wire:model="items.{{ $index }}.collection_action_index" label="Collect at">@foreach ($actions as $actionIndex => $routeAction) @if ($routeAction['action_type'] === 'collection')<flux:select.option :value="$actionIndex">{{ $actionIndex + 1 }}. {{ $sites->firstWhere('id', $routeAction['site_id'])?->name ?? 'Select location' }}</flux:select.option>@endif @endforeach</flux:select>
-                <flux:select wire:model="items.{{ $index }}.delivery_action_index" label="Deliver at">@foreach ($actions as $actionIndex => $routeAction) @if ($routeAction['action_type'] === 'delivery')<flux:select.option :value="$actionIndex">{{ $actionIndex + 1 }}. {{ $sites->firstWhere('id', $routeAction['site_id'])?->name ?? 'Select location' }}</flux:select.option>@endif @endforeach</flux:select>
+                @if ($movement_type === 'exchange')<flux:select wire:model.live="items.{{ $index }}.leg" label="Exchange list"><flux:select.option value="delivery">Being delivered</flux:select.option><flux:select.option value="collection">Being collected</flux:select.option></flux:select>@endif
                 <flux:input class="md:col-span-2" wire:model="items.{{ $index }}.accessories" label="Accessories" /><flux:error name="items.{{ $index }}.collection_action_index" /><flux:error name="items.{{ $index }}.delivery_action_index" /><div class="md:col-span-2 flex justify-end"><flux:button type="button" variant="danger" wire:click="removeItem({{ $index }})">Remove</flux:button></div>
             </flux:card>
         @endforeach

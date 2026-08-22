@@ -21,4 +21,10 @@ class Customer extends Model
     {
         return $this->hasMany(Movement::class);
     }
+
+    /** @return HasMany<Site, $this> */
+    public function sites(): HasMany
+    {
+        return $this->hasMany(Site::class);
+    }
 }
