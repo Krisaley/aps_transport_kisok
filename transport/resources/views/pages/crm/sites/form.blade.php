@@ -7,6 +7,8 @@ use Illuminate\Validation\Rule;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Illuminate\Support\Str;
+use App\Services\PostcodeLookup;
+use App\Settings\GeneralSettings;
 
 new #[Title('Site')] class extends Component {
     public ?Site $site = null;
@@ -33,7 +35,13 @@ new #[Title('Site')] class extends Component {
         Flux::toast(text: 'Site saved successfully', variant: 'success'); return $this->redirectRoute('crm.sites.index', navigate: true);
     }
     public ?string $access_instructions = null;
+    public function validatePostcode(PostcodeLookup $lookup, GeneralSettings $settings): void
+    {
+        if($settings->postcode_validation_provider!=='postcodes_io'){ Flux::toast(text:'Postcodes.io is not the configured provider.',variant:'warning'); return; }
+        $result=$lookup->lookup($this->postcode); if(!$result){$this->addError('postcode','Postcode could not be validated. Check it or continue with manual entry.');return;}
+        $this->postcode=$result['postcode']; $this->county=$this->county ?: ($result['admin_district']??$result['region']??null); $this->resetErrorBag('postcode'); Flux::toast(text:'Postcode validated',variant:'success');
+    }
     public function with(): array { return ['customers'=>Customer::where('company_id',$this->company_id)->orderBy('name')->get()]; }
 };
 ?>
-<section class="w-full p-6"><flux:heading size="xl">{{ $site ? __('Edit Site') : __('Create Site') }}</flux:heading><x-pages::shared.layout contentclass="max-w-3xl"><form wire:submit="save" class="grid gap-5 sm:grid-cols-2"><flux:input wire:model="name" label="Site name" required /><flux:select wire:model="customer_id" label="Customer (blank for depot/internal site)"><flux:select.option value="">No customer</flux:select.option>@foreach($customers as $customer)<flux:select.option :value="$customer->id">{{ $customer->name }}</flux:select.option>@endforeach</flux:select><flux:callout class="sm:col-span-2">Enter the validated physical address. A hidden address fingerprint is generated automatically to prevent duplicates. Google address lookup will become available when its integration key is configured.</flux:callout><flux:input wire:model="address_line_1" label="Address line 1" required /><flux:input wire:model="address_line_2" label="Address line 2" /><flux:input wire:model="town" label="Town / city" /><flux:input wire:model="county" label="County" /><flux:input wire:model="postcode" label="Postcode" required /><flux:input wire:model="what_3_words" label="What3Words" /><flux:textarea class="sm:col-span-2" wire:model="access_instructions" label="Instructions / easy to find"/><div class="flex justify-end gap-3 sm:col-span-2"><flux:button :href="route('crm.sites.index')" variant="ghost">{{ __('Cancel') }}</flux:button><flux:button type="submit" variant="primary">{{ __('Save') }}</flux:button></div></form></x-pages::shared.layout></section>
+<section class="w-full p-6"><flux:heading size="xl">{{ $site ? __('Edit Site') : __('Create Site') }}</flux:heading><x-pages::shared.layout contentclass="max-w-3xl"><form wire:submit="save" class="grid gap-5 sm:grid-cols-2"><flux:input wire:model="name" label="Site name" required /><flux:select wire:model="customer_id" variant="combobox" clearable label="Customer (blank for depot/internal site)" placeholder="Search customers..."><flux:select.option value="">No customer</flux:select.option>@foreach($customers as $customer)<flux:select.option :value="$customer->id">{{ $customer->name }}</flux:select.option>@endforeach</flux:select><flux:callout class="sm:col-span-2">Enter the physical address. A hidden fingerprint prevents duplicates. Postcodes.io can validate UK postcodes; manual entry remains available.</flux:callout><flux:input wire:model="address_line_1" label="Address line 1" required /><flux:input wire:model="address_line_2" label="Address line 2" /><flux:input wire:model="town" label="Town / city" /><flux:input wire:model="county" label="County" /><div class="flex items-end gap-2"><div class="flex-1"><flux:input wire:model="postcode" label="Postcode" required /></div><flux:button type="button" wire:click="validatePostcode">Validate</flux:button></div><flux:input wire:model="what_3_words" label="What3Words" /><flux:textarea class="sm:col-span-2" wire:model="access_instructions" label="Instructions / easy to find"/><div class="flex justify-end gap-3 sm:col-span-2"><flux:button :href="route('crm.sites.index')" variant="ghost">{{ __('Cancel') }}</flux:button><flux:button type="submit" variant="primary">{{ __('Save') }}</flux:button></div></form></x-pages::shared.layout></section>

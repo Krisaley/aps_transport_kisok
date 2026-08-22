@@ -28,6 +28,16 @@ new #[Title('Movement')] class extends Component {
     public ?int $driver_id = null;
     public ?int $vehicle_id = null;
     public ?string $driver_notes = null;
+    public string $newCustomerName = '';
+    public string $newCustomerAccount = '';
+
+    public function createCustomer(): void
+    {
+        Gate::authorize('crm.customer.create');
+        $data = $this->validate(['newCustomerName'=>['required','max:255'],'newCustomerAccount'=>['required','max:255','unique:customers,account_number']]);
+        $customer = Customer::create(['company_id'=>$this->company_id,'name'=>$data['newCustomerName'],'account_number'=>$data['newCustomerAccount']]);
+        $this->customer_id=$customer->id; $this->reset(['newCustomerName','newCustomerAccount']); $this->applyStandardRoute(); Flux::modal('create-customer')->close(); Flux::toast(text:'Customer created and selected',variant:'success');
+    }
 
     public function mount(CurrentCompany $currentCompany, ?Movement $movement = null): void
     {
@@ -450,7 +460,7 @@ new #[Title('Movement')] class extends Component {
             <div><flux:text>Active company / depot</flux:text><flux:heading size="sm">{{ $activeCompany->name }}</flux:heading></div>
             <flux:input wire:model="reference" label="Reference" required />
             <flux:select wire:model.live="movement_type" label="Type"><flux:select.option value="delivery">Delivery</flux:select.option><flux:select.option value="collection">Collection</flux:select.option><flux:select.option value="exchange">Exchange</flux:select.option><flux:select.option value="site_to_site">Site to site</flux:select.option></flux:select>
-            <flux:select wire:model.live="customer_id" label="Customer"><flux:select.option value="">Select customer</flux:select.option>@foreach ($customers as $customer)<flux:select.option :value="$customer->id">{{ $customer->name }}</flux:select.option>@endforeach</flux:select>
+            <div class="flex items-end gap-2"><div class="flex-1"><flux:select wire:model.live="customer_id" variant="combobox" clearable label="Customer" placeholder="Search customers..."><flux:select.option value="">Select customer</flux:select.option>@foreach ($customers as $customer)<flux:select.option :value="$customer->id" :wire:key="'movement-customer-'.$customer->id">{{ $customer->name }} · {{ $customer->account_number }}</flux:select.option>@endforeach</flux:select></div><flux:modal.trigger name="create-customer"><flux:button type="button" icon="plus">New</flux:button></flux:modal.trigger></div>
             <flux:input wire:model="advice_note" label="Advice note" /><flux:input wire:model="job_number" label="Job number" /><flux:input wire:model="contact_name" label="Contact" /><flux:input wire:model="contact_number" label="Phone" /><flux:textarea class="md:col-span-3" wire:model="notes" label="Instructions" />
         </flux:card>
 
@@ -460,8 +470,7 @@ new #[Title('Movement')] class extends Component {
         @foreach ($actions as $index => $action)
             <flux:card wire:key="action-{{ $index }}" class="grid gap-4 md:grid-cols-3">
                 <div class="md:col-span-3"><flux:heading size="sm">{{ $index + 1 }}. {{ str($action['action_type'])->headline() }}</flux:heading></div>
-                <flux:select wire:model.live="actions.{{ $index }}.site_id" label="Location"><flux:select.option value="">Select address</flux:select.option>@foreach ($sites as $site)<flux:select.option :value="$site->id">{{ $site->name }} — {{ $site->postcode }}</flux:select.option>@endforeach</flux:select>
-                <flux:input wire:model="actions.{{ $index }}.contact_name" label="Contact name"/><flux:input wire:model="actions.{{ $index }}.contact_number" label="Contact number"/>
+                <flux:select wire:model.live="actions.{{ $index }}.site_id" variant="combobox" clearable label="Location" placeholder="Search sites or postcodes..."><flux:select.option value="">Select address</flux:select.option>@foreach ($sites as $site)<flux:select.option :value="$site->id" :wire:key="'movement-site-'.$index.'-'.$site->id">{{ $site->name }} — {{ $site->postcode }}</flux:select.option>@endforeach</flux:select>
                 <flux:input wire:model="actions.{{ $index }}.schedule_start" type="datetime-local" label="Start / earliest" /><flux:input wire:model="actions.{{ $index }}.schedule_end" type="datetime-local" label="End / latest" /><flux:textarea class="md:col-span-3" wire:model="actions.{{ $index }}.access_instructions" label="Instructions / easy to find"/><flux:textarea class="md:col-span-3" wire:model="actions.{{ $index }}.notes" label="Address notes" /><div class="md:col-span-3"><flux:error name="actions.{{ $index }}.action_type" /></div>
             </flux:card>
         @endforeach
@@ -472,12 +481,12 @@ new #[Title('Movement')] class extends Component {
         @error('items')<flux:callout variant="danger">{{ $message }}</flux:callout>@enderror
         @foreach ($items as $index => $item)
             <flux:card wire:key="item-{{ $index }}" class="grid gap-4 md:grid-cols-4">
-                <flux:select class="md:col-span-4" wire:model.live="items.{{ $index }}.equipment_id" variant="listbox" searchable clearable label="Equipment (optional for manual lines)" placeholder="Search stock, serial, make or model"><flux:select.option value="">Manual line</flux:select.option>@foreach($equipmentOptions as $equipmentOption)<flux:select.option :value="$equipmentOption->id">{{ $equipmentOption->stock_number }} · {{ $equipmentOption->serial_number }} · {{ $equipmentOption->equipmentModel->make->name }} {{ $equipmentOption->equipmentModel->name }}</flux:select.option>@endforeach</flux:select><flux:input wire:model="items.{{ $index }}.stock_number" label="Stock number" /><flux:input wire:model="items.{{ $index }}.serial_number" label="Serial number" /><flux:input wire:model="items.{{ $index }}.description" label="Description" required /><flux:input wire:model="items.{{ $index }}.quantity" type="number" step="0.01" min="0.01" label="Qty"/>
+                <flux:select class="md:col-span-4" wire:model.live="items.{{ $index }}.equipment_id" variant="combobox" clearable label="Equipment (optional for manual lines)" placeholder="Search stock, serial, make or model"><flux:select.option value="">Manual line</flux:select.option>@foreach($equipmentOptions as $equipmentOption)<flux:select.option :value="$equipmentOption->id" :wire:key="'movement-equipment-'.$index.'-'.$equipmentOption->id">{{ $equipmentOption->stock_number }} · {{ $equipmentOption->serial_number }} · {{ $equipmentOption->equipmentModel->make->name }} {{ $equipmentOption->equipmentModel->name }}</flux:select.option>@endforeach</flux:select><flux:input wire:model="items.{{ $index }}.stock_number" label="Stock number" /><flux:input wire:model="items.{{ $index }}.serial_number" label="Serial number" /><flux:input wire:model="items.{{ $index }}.description" label="Description" required /><flux:input wire:model="items.{{ $index }}.quantity" type="number" step="0.01" min="0.01" label="Qty"/>
                 @if ($movement_type === 'exchange')<flux:select wire:model.live="items.{{ $index }}.leg" label="Exchange list"><flux:select.option value="delivery">Being delivered</flux:select.option><flux:select.option value="collection">Being collected</flux:select.option></flux:select>@endif
                 <div class="md:col-span-4 space-y-2"><div class="flex justify-between"><flux:heading size="sm">Accessories</flux:heading><flux:button type="button" size="xs" wire:click="addAccessory({{ $index }})">Add accessory</flux:button></div>@foreach($item['accessories'] as $accessoryIndex=>$accessory)<div class="grid gap-2 md:grid-cols-5" wire:key="accessory-{{ $index }}-{{ $accessoryIndex }}"><flux:select wire:model="items.{{ $index }}.accessories.{{ $accessoryIndex }}.type"><flux:select.option value="trailer">Trailer</flux:select.option><flux:select.option value="remote">Remote</flux:select.option><flux:select.option value="straps">Straps</flux:select.option><flux:select.option value="remote_batteries">Remote batteries</flux:select.option><flux:select.option value="keys">Keys</flux:select.option><flux:select.option value="outrigger_pads">Outrigger pads</flux:select.option><flux:select.option value="custom">Custom</flux:select.option></flux:select><flux:input class="md:col-span-2" wire:model="items.{{ $index }}.accessories.{{ $accessoryIndex }}.description" placeholder="Description"/><flux:input wire:model="items.{{ $index }}.accessories.{{ $accessoryIndex }}.serial_number" placeholder="Serial"/><div class="flex gap-1"><flux:input wire:model="items.{{ $index }}.accessories.{{ $accessoryIndex }}.quantity" type="number" min="0.01" step="0.01"/><flux:button type="button" variant="danger" size="xs" wire:click="removeAccessory({{ $index }},{{ $accessoryIndex }})">×</flux:button></div></div>@endforeach</div><flux:error name="items.{{ $index }}.collection_action_index" /><flux:error name="items.{{ $index }}.delivery_action_index" /><div class="md:col-span-2 flex justify-end"><flux:button type="button" variant="danger" wire:click="removeItem({{ $index }})">Remove</flux:button></div>
             </flux:card>
         @endforeach
 
         <div class="sticky bottom-0 flex justify-end gap-3 border-t bg-white/95 p-4"><flux:button :href="route('operations.movements.index')" variant="ghost">Cancel</flux:button><flux:button type="submit" variant="primary">Save movement</flux:button></div>
-    </form>
+    </form><flux:modal name="create-customer" class="min-w-[28rem]"><div class="space-y-4"><flux:heading size="lg">Create customer</flux:heading><flux:input wire:model="newCustomerAccount" label="Account number"/><flux:input wire:model="newCustomerName" label="Customer name"/><div class="flex justify-end gap-2"><flux:modal.close><flux:button variant="ghost">Cancel</flux:button></flux:modal.close><flux:button type="button" variant="primary" wire:click="createCustomer">Create and select</flux:button></div></div></flux:modal>
 </section>

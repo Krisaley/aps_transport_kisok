@@ -10,6 +10,7 @@ new class extends Component {
     public string $googleMapsApiKey = '';
     public string $googleAddressCountry = 'GB';
     public bool $hasGoogleMapsApiKey = false;
+    public string $postcodeValidationProvider = 'postcodes_io';
 
     public function mount(GeneralSettings $settings): void
     {
@@ -17,6 +18,7 @@ new class extends Component {
         $this->googleAddressValidationEnabled = $settings->google_address_validation_enabled;
         $this->googleAddressCountry = $settings->google_address_country;
         $this->hasGoogleMapsApiKey = filled($settings->google_maps_api_key);
+        $this->postcodeValidationProvider = $settings->postcode_validation_provider;
     }
 
     public function save(GeneralSettings $settings): void
@@ -26,11 +28,13 @@ new class extends Component {
             'googleAddressValidationEnabled' => ['boolean'],
             'googleMapsApiKey' => ['nullable','string','max:500'],
             'googleAddressCountry' => ['required','string','size:2'],
+            'postcodeValidationProvider'=>['required','in:postcodes_io,google,manual'],
         ]);
 
         $settings->site_name = $this->siteName;
         $settings->google_address_validation_enabled = $this->googleAddressValidationEnabled;
         $settings->google_address_country = strtoupper($this->googleAddressCountry);
+        $settings->postcode_validation_provider = $this->postcodeValidationProvider;
         if (filled($this->googleMapsApiKey)) $settings->google_maps_api_key = $this->googleMapsApiKey;
         $settings->save();
 
@@ -63,7 +67,7 @@ new class extends Component {
                     description="The name displayed in browser titles and throughout the application."
                     required
                 />
-                <flux:separator/><flux:heading size="md">Google address validation</flux:heading><flux:switch wire:model="googleAddressValidationEnabled" label="Enable Google address validation"/><flux:input wire:model="googleMapsApiKey" type="password" label="Google Maps API key" placeholder="{{ $hasGoogleMapsApiKey ? 'Key saved — enter a value to replace it' : 'Enter API key' }}" description="Stored encrypted. Restrict this key to the required Google address APIs and approved hosts."/><flux:input wire:model="googleAddressCountry" label="Default country code" maxlength="2"/>
+                <flux:separator/><flux:heading size="md">Address validation</flux:heading><flux:select wire:model="postcodeValidationProvider" variant="listbox" label="Postcode provider"><flux:select.option value="postcodes_io">Postcodes.io (UK, no API key)</flux:select.option><flux:select.option value="google">Google Address Validation</flux:select.option><flux:select.option value="manual">Manual only</flux:select.option></flux:select><flux:switch wire:model="googleAddressValidationEnabled" label="Enable Google address validation"/><flux:input wire:model="googleMapsApiKey" type="password" label="Google Maps API key" placeholder="{{ $hasGoogleMapsApiKey ? 'Key saved — enter a value to replace it' : 'Enter API key' }}" description="Stored encrypted. Restrict this key to the required Google address APIs and approved hosts."/><flux:input wire:model="googleAddressCountry" label="Default country code" maxlength="2"/>
 
                 <div class="flex justify-end">
                     <flux:button type="submit" variant="primary">

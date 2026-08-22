@@ -88,6 +88,15 @@ echo "→ Current release: $CURRENT_TAG"
 echo "→ Creating pre-deployment database backup..."
 
 mkdir -p backups
+
+if [ ! -w backups ]; then
+    echo "ERROR: $APP_DIR/backups is not writable by $(id -un)."
+    echo "Fix the host directory ownership, then rerun this script:"
+    echo "  sudo chown \"$(id -u):$(id -g)\" \"$APP_DIR/backups\""
+    echo "  sudo chmod u+rwx \"$APP_DIR/backups\""
+    exit 1
+fi
+
 BACKUP_STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 BACKUP_FILE="backups/transport-predeploy-${BACKUP_STAMP}.dump"
 

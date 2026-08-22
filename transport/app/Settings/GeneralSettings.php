@@ -16,6 +16,8 @@ class GeneralSettings extends Settings
 
     public string $google_address_country;
 
+    public string $postcode_validation_provider;
+
     public static function group(): string
     {
         return 'general';
