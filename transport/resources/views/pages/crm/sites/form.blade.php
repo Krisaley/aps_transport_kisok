@@ -22,12 +22,11 @@ new #[Title('Site')] class extends Component {
     public ?string $address_code = null;
     public ?int $customer_id = null;
     public ?int $company_id = null;
-    public function mount(CurrentCompany $currentCompany, ?Site $site = null): void { $this->company_id=$currentCompany->id(auth()->user()); abort_if($site && (int)$site->company_id !== $this->company_id, 404); $this->site = $site; foreach (['name','address_line_1','address_line_2','town','county','postcode','what_3_words','address_code','access_instructions','customer_id'] as $field) { $this->{$field} = $site?->{$field} ?? ($this->{$field} ?? null); } }
+    public function mount(CurrentCompany $currentCompany, ?Site $site = null): void { $this->company_id=$currentCompany->id(auth()->user()); $this->site = $site; foreach (['name','address_line_1','address_line_2','town','county','postcode','what_3_words','address_code','access_instructions','customer_id'] as $field) { $this->{$field} = $site?->{$field} ?? ($this->{$field} ?? null); } }
     public function save(CurrentCompany $currentCompany): mixed
     {
         Gate::authorize($this->site ? 'crm.site.update' : 'crm.site.create');
-        abort_unless($this->company_id === $currentCompany->id(auth()->user()), 403);
-        $data = $this->validate(['company_id'=>['required','integer'],'customer_id'=>['nullable',Rule::exists('customers','id')->where('company_id',$this->company_id)],'name'=>['required','string','max:255'],'address_line_1'=>['required','string','max:255'],'address_line_2'=>['nullable','string','max:255'],'town'=>['nullable','string','max:255'],'county'=>['nullable','string','max:255'],'postcode'=>['required','string','max:20'],'what_3_words'=>['nullable','string','max:255'],'access_instructions'=>['nullable','string','max:2000']]);
+        $data = $this->validate(['customer_id'=>['nullable',Rule::exists('customers','id')->where('company_id',$this->company_id)],'name'=>['required','string','max:255'],'address_line_1'=>['required','string','max:255'],'address_line_2'=>['nullable','string','max:255'],'town'=>['nullable','string','max:255'],'county'=>['nullable','string','max:255'],'postcode'=>['required','string','max:20'],'what_3_words'=>['nullable','string','max:255'],'access_instructions'=>['nullable','string','max:2000']]);
         $normalised = Str::upper(preg_replace('/[^A-Z0-9]/i','',implode('|',[$data['address_line_1'],$data['address_line_2']??'',$data['town']??'',$data['county']??'',$data['postcode']]))) ;
         $data['address_code'] = hash('sha256', $normalised);
         validator($data, ['address_code'=>[Rule::unique('sites','address_code')->ignore($this->site?->id)]], ['address_code.unique'=>'This physical address already exists. Select the existing Site instead.'])->validate();

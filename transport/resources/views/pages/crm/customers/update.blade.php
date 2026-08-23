@@ -37,7 +37,7 @@ new #[Title('Update Customer')] class extends Component {
         $this->validate([
             'name'              => ['required', 'string', 'max:255'],
             'account_number'    => ['required', 'string', 'max:255', 'unique:customers,account_number,'.$this->customer->id],
-            'home_site_id' => ['nullable',Rule::exists('sites','id')->where('company_id',$this->customer->company_id)],
+            'home_site_id' => ['nullable',Rule::exists('sites','id')],
         ]);
 
         $this->customer->update([
@@ -58,7 +58,7 @@ new #[Title('Update Customer')] class extends Component {
 
     public function with(): array
     {
-        return ['sites'=>Site::where('company_id',$this->customer->company_id)->where(fn($query)=>$query->whereNull('customer_id')->orWhere('customer_id',$this->customer->id))->orderBy('name')->get()];
+        return ['sites'=>Site::orderBy('name')->get()];
     }
 
 };

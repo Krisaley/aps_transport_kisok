@@ -1,8 +1,6 @@
 <?php
 
 use App\Models\Site;
-use App\Support\CurrentCompany;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -11,9 +9,9 @@ new #[Title('Sites')] class extends Component {
     use WithPagination;
     public string $search = '';
     public function updatedSearch(): void { $this->resetPage(); }
-    public function with(CurrentCompany $currentCompany): array
+    public function with(): array
     {
-        return ['sites' => Site::query()->where('company_id', $currentCompany->id(Auth::user()))
+        return ['sites' => Site::query()
             ->when($this->search !== '', fn ($query) => $query->where(fn ($query) => $query->where('name', 'like', '%'.$this->search.'%')->orWhere('postcode', 'like', '%'.$this->search.'%')->orWhere('town', 'like', '%'.$this->search.'%')))
             ->orderBy('name')->paginate(10)];
     }

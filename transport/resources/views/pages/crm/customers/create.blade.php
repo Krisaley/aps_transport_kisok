@@ -28,7 +28,7 @@ new #[Title('Create Customer')] class extends Component {
             'name'              => ['required', 'string', 'max:255'],
             'account_number'    => ['required', 'string', 'max:255', 'unique:customers,account_number'],
             'company_id' => ['required','integer','exists:companies,id'],
-            'home_site_id' => ['nullable',Rule::exists('sites','id')->where('company_id',$this->company_id)],
+            'home_site_id' => ['nullable',Rule::exists('sites','id')],
         ]);
 
         $customer = Customer::create([
@@ -49,7 +49,7 @@ new #[Title('Create Customer')] class extends Component {
 
     public function with(): array
     {
-        return ['sites'=>Site::where('company_id',$this->company_id)->whereNull('customer_id')->orderBy('name')->get()];
+        return ['sites'=>Site::orderBy('name')->get()];
     }
 
 };

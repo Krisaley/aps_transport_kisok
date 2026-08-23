@@ -247,7 +247,7 @@ new #[Title('Movement')] class extends Component {
             'actions' => ['required', 'array', 'min:2'],
             'actions.*.id' => ['nullable'],
             'actions.*.action_type' => ['required', Rule::in(['collection', 'delivery'])],
-            'actions.*.site_id' => ['required', Rule::exists('sites', 'id')->where('company_id', $this->company_id)],
+            'actions.*.site_id' => ['required', Rule::exists('sites', 'id')],
             'actions.*.contact_name'=>['nullable','string','max:255'],'actions.*.contact_number'=>['nullable','string','max:100'],'actions.*.access_instructions'=>['nullable','string','max:2000'],
             'actions.*.driver_id' => ['nullable', 'exists:users,id'],
             'actions.*.vehicle_id' => ['nullable', 'exists:vehicles,id'],
@@ -438,7 +438,7 @@ new #[Title('Movement')] class extends Component {
         return [
             'activeCompany' => $company,
             'customers' => Customer::where('company_id', $companyId)->orderBy('name')->get(),
-            'sites' => Site::where('company_id', $companyId)->orderBy('name')->get(),
+            'sites' => Site::orderBy('name')->get(),
             'customerSites' => Site::where('company_id', $companyId)->where('customer_id', $this->customer_id)->orderBy('name')->get(),
             'drivers' => User::where(fn ($query) => $query->where('company_id', $companyId)->orWhereHas('companies', fn ($query) => $query->whereKey($companyId)))->whereHas('roles', fn ($query) => $query->where('name', 'Driver'))->where('is_active', true)->orderBy('name')->get(),
             'vehicles' => Vehicle::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get(),

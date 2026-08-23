@@ -33,4 +33,10 @@ class Company extends Model
     {
         return $this->hasMany(Movement::class);
     }
+
+    /** @return BelongsToMany<Site, $this> */
+    public function sites(): BelongsToMany
+    {
+        return $this->belongsToMany(Site::class);
+    }
 }

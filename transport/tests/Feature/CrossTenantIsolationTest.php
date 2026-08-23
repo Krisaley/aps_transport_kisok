@@ -30,7 +30,7 @@ class CrossTenantIsolationTest extends TestCase
         return $user;
     }
 
-    public function test_equipment_and_site_indexes_only_render_the_active_company(): void
+    public function test_equipment_is_tenant_scoped_while_sites_are_app_wide(): void
     {
         $first = Company::create(['code' => 'ONE', 'name' => 'One', 'document_prefix' => 'ONE', 'is_active' => true]);
         $second = Company::create(['code' => 'TWO', 'name' => 'Two', 'document_prefix' => 'TWO', 'is_active' => true]);
@@ -43,10 +43,10 @@ class CrossTenantIsolationTest extends TestCase
         Site::create(['company_id' => $second->id, 'name' => 'Two depot', 'address_line_1' => 'Two Road', 'postcode' => 'PE2']);
 
         Livewire::actingAs($user)->test('pages::stock.equipment.index')->assertSee('ONE-001')->assertDontSee('TWO-001');
-        Livewire::actingAs($user)->test('pages::crm.sites.index')->assertSee('One depot')->assertDontSee('Two depot');
+        Livewire::actingAs($user)->test('pages::crm.sites.index')->assertSee('One depot')->assertSee('Two depot');
     }
 
-    public function test_cross_tenant_equipment_site_and_company_editing_returns_not_found(): void
+    public function test_cross_tenant_equipment_and_company_editing_returns_not_found_while_sites_remain_shared(): void
     {
         $first = Company::create(['code' => 'ONE', 'name' => 'One', 'document_prefix' => 'ONE', 'is_active' => true]);
         $second = Company::create(['code' => 'TWO', 'name' => 'Two', 'document_prefix' => 'TWO', 'is_active' => true]);
@@ -57,7 +57,7 @@ class CrossTenantIsolationTest extends TestCase
         $site = Site::create(['company_id' => $second->id, 'name' => 'Two depot', 'address_line_1' => 'Two Road', 'postcode' => 'PE2']);
 
         Livewire::actingAs($user)->test('pages::stock.equipment.form', ['equipment' => $equipment])->assertNotFound();
-        Livewire::actingAs($user)->test('pages::crm.sites.form', ['site' => $site])->assertNotFound();
+        Livewire::actingAs($user)->test('pages::crm.sites.form', ['site' => $site])->assertOk();
         Livewire::actingAs($user)->test('pages::settings.companies.form', ['company' => $second])->assertNotFound();
     }
 }
