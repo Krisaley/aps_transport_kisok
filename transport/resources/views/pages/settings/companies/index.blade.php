@@ -62,10 +62,37 @@ new #[Title('Companies')] class extends Component {
 
     public function with(): array
     {
-        return ['companies' => $this->accessibleCompanies()->with('homeSite')->withCount(['users', 'movements'])
+        return ['companies' => $this->accessibleCompanies()->withCount('users')
             ->when($this->search !== '', fn ($query) => $query->where(fn ($query) => $query->where('name', 'like', '%'.$this->search.'%')->orWhere('code', 'like', '%'.$this->search.'%')))
             ->orderBy('name')->paginate(10)];
     }
 };
 ?>
-<section class="w-full">@include('partials.settings-heading',['section'=>'Companies / tenants'])<x-pages::settings.layout contentclass="mt-5 w-full max-w-5xl"><div class="space-y-5"><div class="flex items-center justify-between gap-4"><flux:input class="max-w-sm" wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Search companies..."/>@can('admin.company.create')<flux:button variant="primary" icon="plus" :href="route('settings.companies.create')">Add company</flux:button>@endcan</div><flux:table :paginate="$companies"><flux:table.columns><flux:table.column>Company</flux:table.column><flux:table.column>Home depot</flux:table.column><flux:table.column>Users</flux:table.column><flux:table.column>Movements</flux:table.column><flux:table.column>Status</flux:table.column><flux:table.column align="end">Actions</flux:table.column></flux:table.columns><flux:table.rows>@forelse($companies as $company)<flux:table.row :key="$company->id"><flux:table.cell><strong>{{ $company->name }}</strong><br><span class="text-xs text-zinc-500">{{ $company->code }}</span></flux:table.cell><flux:table.cell>{{ $company->homeSite?->name ?? 'Not set' }}</flux:table.cell><flux:table.cell>{{ $company->users_count }}</flux:table.cell><flux:table.cell>{{ $company->movements_count }}</flux:table.cell><flux:table.cell><flux:badge color="{{ $company->is_active ? 'green' : 'zinc' }}">{{ $company->is_active ? 'Active' : 'Inactive' }}</flux:badge></flux:table.cell><flux:table.cell align="end"><div class="flex justify-end gap-2">@can('admin.company.update')<flux:button size="sm" variant="ghost" :href="route('settings.companies.update',$company)">Manage</flux:button>@endcan @can('admin.company.delete')<flux:button size="sm" variant="danger" wire:click="confirmDelete({{ $company->id }})">Delete</flux:button>@endcan</div></flux:table.cell></flux:table.row>@empty<flux:table.row><flux:table.cell colspan="6" class="text-center">No companies found</flux:table.cell></flux:table.row>@endforelse</flux:table.rows></flux:table></div><flux:modal name="delete-company" class="min-w-[28rem]"><div class="space-y-5"><div><flux:heading size="lg">Delete {{ $deleteCompanyName }}?</flux:heading><flux:text class="mt-2">Only an empty tenant can be permanently deleted.</flux:text></div><flux:error name="deleteCompany"/><div class="flex justify-end gap-2"><flux:modal.close><flux:button variant="ghost">Cancel</flux:button></flux:modal.close><flux:button variant="danger" wire:click="deleteCompany">Delete company</flux:button></div></div></flux:modal></x-pages::settings.layout></section>
+<section class="w-full">
+    @include('partials.settings-heading', ['section' => 'Companies / tenants'])
+    <x-pages::settings.layout contentclass="mt-5 w-full max-w-5xl">
+        <div class="space-y-5">
+            <div class="flex items-center justify-between gap-4">
+                <flux:input class="max-w-sm" wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Search companies..." />
+                @can('admin.company.create')<flux:button variant="primary" icon="plus" :href="route('settings.companies.create')">Add company</flux:button>@endcan
+            </div>
+            <flux:table :paginate="$companies">
+                <flux:table.columns><flux:table.column>Iteration</flux:table.column><flux:table.column>Shortcode</flux:table.column><flux:table.column>Company name</flux:table.column><flux:table.column>Users</flux:table.column><flux:table.column align="end">Actions</flux:table.column></flux:table.columns>
+                <flux:table.rows>
+                    @forelse($companies as $company)
+                        <flux:table.row :key="$company->id">
+                            <flux:table.cell>{{ $companies->firstItem() + $loop->index }}</flux:table.cell>
+                            <flux:table.cell class="font-mono">{{ $company->code }}</flux:table.cell>
+                            <flux:table.cell><strong>{{ $company->name }}</strong>@if($company->trading_name)<br><span class="text-xs text-zinc-500">{{ $company->trading_name }}</span>@endif</flux:table.cell>
+                            <flux:table.cell>{{ $company->users_count }}</flux:table.cell>
+                            <flux:table.cell align="end"><flux:dropdown position="bottom" align="end"><flux:button size="sm" variant="ghost" icon="ellipsis-horizontal" aria-label="Actions for {{ $company->name }}"/><flux:menu>@can('admin.company.update')<flux:menu.item icon="pencil" :href="route('settings.companies.update',$company)">Manage</flux:menu.item>@endcan @can('admin.company.delete')<flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete({{ $company->id }})">Delete</flux:menu.item>@endcan</flux:menu></flux:dropdown></flux:table.cell>
+                        </flux:table.row>
+                    @empty
+                        <flux:table.row><flux:table.cell colspan="5" class="text-center">No companies found</flux:table.cell></flux:table.row>
+                    @endforelse
+                </flux:table.rows>
+            </flux:table>
+        </div>
+        <flux:modal name="delete-company" class="min-w-[28rem]"><div class="space-y-5"><div><flux:heading size="lg">Delete {{ $deleteCompanyName }}?</flux:heading><flux:text class="mt-2">Only an empty tenant can be permanently deleted.</flux:text></div><flux:error name="deleteCompany"/><div class="flex justify-end gap-2"><flux:modal.close><flux:button variant="ghost">Cancel</flux:button></flux:modal.close><flux:button variant="danger" wire:click="deleteCompany">Delete company</flux:button></div></div></flux:modal>
+    </x-pages::settings.layout>
+</section>
