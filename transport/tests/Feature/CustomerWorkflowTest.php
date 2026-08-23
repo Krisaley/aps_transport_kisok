@@ -53,4 +53,32 @@ class CustomerWorkflowTest extends TestCase
             ->assertSee('Equipment')
             ->assertSee('Movements');
     }
+
+    public function test_customer_update_addresses_tab_renders(): void
+    {
+        $company = Company::create(['code' => 'APS', 'name' => 'APS', 'document_prefix' => 'APS', 'is_active' => true]);
+        $role = Role::create(['name' => 'Super-Admin', 'guard_name' => 'web', 'is_active' => true]);
+        $user = User::factory()->create(['company_id' => $company->id, 'is_active' => true]);
+        $user->assignRole($role);
+        $site = Site::create([
+            'company_id' => $company->id,
+            'name' => 'Head Office',
+            'address_line_1' => 'One Road',
+            'postcode' => 'PE1',
+        ]);
+        $customer = Customer::create([
+            'company_id' => $company->id,
+            'name' => 'Customer',
+            'account_number' => 'C1',
+            'home_site_id' => $site->id,
+        ]);
+        $customer->sites()->attach($site);
+
+        Livewire::withQueryParams(['tab' => 'addresses'])
+            ->actingAs($user)
+            ->test('pages::crm.customers.update', ['customer' => $customer])
+            ->assertOk()
+            ->assertSee('Head office')
+            ->assertSee('Depots');
+    }
 }
