@@ -26,10 +26,12 @@ class ConfigurationPageTest extends TestCase
             ->set('configurationTab', 'services')
             ->assertSee('Address validation service')
             ->assertSee('Postcodes.io requires no API key')
+            ->assertSee('Setup instructions')
             ->assertDontSee('Google Maps API key')
             ->set('postcodeValidationProvider', 'google')
             ->assertSee('Google Maps API key')
             ->assertSee('Default country code')
+            ->assertSee('Google setup instructions')
             ->set('postcodeValidationProvider', 'manual')
             ->assertSee('will not be checked by an external service')
             ->assertDontSee('Google Maps API key');

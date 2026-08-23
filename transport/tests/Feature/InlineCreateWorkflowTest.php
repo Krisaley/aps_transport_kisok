@@ -59,4 +59,20 @@ class InlineCreateWorkflowTest extends TestCase
 
         $this->assertTrue(Site::whereKey($company->fresh()->home_site_id)->exists());
     }
+
+    public function test_changing_a_company_head_office_starts_with_shared_site_search(): void
+    {
+        $company = Company::create(['code' => 'APS', 'name' => 'APS', 'document_prefix' => 'APS', 'is_active' => true]);
+        $user = $this->admin($company);
+        $site = Site::create(['name' => 'Head Office', 'address_line_1' => 'Depot Road', 'postcode' => 'PE28 5YQ']);
+        $company->sites()->attach($site);
+        $company->update(['home_site_id' => $site->id]);
+
+        Livewire::actingAs($user)->test('pages::settings.companies.form', ['company' => $company])
+            ->call('address', 'head', null, $site->id)
+            ->assertSet('creatingAddress', false)
+            ->assertSet('selectedSiteId', null)
+            ->assertSee('Find an existing address')
+            ->assertDontSee('Address line 1');
+    }
 }

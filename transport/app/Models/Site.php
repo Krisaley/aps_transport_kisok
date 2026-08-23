@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Concerns\HasActivityLog;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Site extends Model
@@ -31,10 +31,16 @@ class Site extends Model
         return collect([$this->address_line_1, $this->address_line_2, $this->town, $this->county, $this->postcode])->filter()->join(', ');
     }
 
-    /** @return BelongsTo<Customer, $this> */
-    public function customer(): BelongsTo
+    /** @return BelongsToMany<Company, $this> */
+    public function companies(): BelongsToMany
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsToMany(Company::class);
+    }
+
+    /** @return BelongsToMany<Customer, $this> */
+    public function customers(): BelongsToMany
+    {
+        return $this->belongsToMany(Customer::class);
     }
 
     /** @return HasMany<Movement, $this> */

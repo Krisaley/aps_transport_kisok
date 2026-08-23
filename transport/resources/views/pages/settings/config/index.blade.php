@@ -78,12 +78,13 @@ new class extends Component {
                         </flux:select>
 
                         @if ($postcodeValidationProvider === 'postcodes_io')
-                            <flux:callout>Postcodes.io requires no API key and validates UK postcodes.</flux:callout>
+                            <flux:callout><div class="flex items-center justify-between gap-3"><span>Postcodes.io requires no API key and validates UK postcodes.</span><flux:modal.trigger name="setup-postcodes"><flux:button size="sm">Setup instructions</flux:button></flux:modal.trigger></div></flux:callout>
                         @elseif ($postcodeValidationProvider === 'google')
                             <div class="grid gap-5 md:grid-cols-2">
                                 <flux:input wire:model="googleMapsApiKey" type="password" label="Google Maps API key" placeholder="{{ $hasGoogleMapsApiKey ? 'Key saved — enter a value to replace it' : 'Enter API key' }}" description="Stored encrypted. Restrict this key to the required Google address APIs and approved hosts." />
                                 <flux:input wire:model="googleAddressCountry" label="Default country code" maxlength="2" />
                             </div>
+                            <flux:modal.trigger name="setup-google"><flux:button type="button" size="sm">Google setup instructions</flux:button></flux:modal.trigger>
                         @else
                             <flux:callout variant="warning">Addresses will be entered manually and will not be checked by an external service.</flux:callout>
                         @endif
@@ -93,6 +94,8 @@ new class extends Component {
                 <div class="flex justify-end border-t pt-4"><flux:button type="submit" variant="primary">Save changes</flux:button></div>
             </form>
         </div>
+        <flux:modal name="setup-postcodes" class="md:w-[32rem]"><div class="space-y-4"><flux:heading size="lg">Postcodes.io setup</flux:heading><ol class="list-decimal space-y-2 pl-5 text-sm"><li>No account or API key is required.</li><li>Select Postcodes.io as the address-validation service.</li><li>Save the configuration.</li><li>Use it to validate UK postcodes; property-level address search is not provided.</li></ol><flux:button href="https://postcodes.io/" target="_blank">Open Postcodes.io documentation</flux:button></div></flux:modal>
+        <flux:modal name="setup-google" class="md:w-[36rem]"><div class="space-y-4"><flux:heading size="lg">Google Places setup</flux:heading><ol class="list-decimal space-y-2 pl-5 text-sm"><li>Create or select a Google Cloud project with billing enabled.</li><li>Enable Places API (New) and Address Validation API.</li><li>Create an API key and restrict it to the required APIs and production server.</li><li>Enter the key here, choose the default country, and save.</li><li>Test autocomplete and address selection before production use.</li></ol><flux:callout variant="warning">Keep the key server-side and configure usage quotas and billing alerts.</flux:callout><flux:button href="https://developers.google.com/maps/documentation/places/web-service/get-api-key" target="_blank">Open Google setup documentation</flux:button></div></flux:modal>
     </x-pages::settings.layout>
 
 </section>
