@@ -55,6 +55,8 @@ class InlineCreateWorkflowTest extends TestCase
     {
         $company = Company::create(['code' => 'APS', 'name' => 'APS', 'document_prefix' => 'APS', 'is_active' => true]);
         $user = $this->admin($company);
-        Livewire::actingAs($user)->test('pages::settings.companies.form', ['company' => $company])->set('site_name', 'Depot')->set('site_address_line_1', 'Depot Road')->set('site_postcode', 'PE28 5YQ')->call('createSite')->assertHasNoErrors()->assertSet('home_site_id', fn ($id) => Site::whereKey($id)->exists());
+        Livewire::actingAs($user)->test('pages::settings.companies.form', ['company' => $company])->set('addressType', 'head')->set('site_name', 'Depot')->set('site_address_line_1', 'Depot Road')->set('site_postcode', 'PE28 5YQ')->call('saveAddress')->assertHasNoErrors();
+
+        $this->assertTrue(Site::whereKey($company->fresh()->home_site_id)->exists());
     }
 }

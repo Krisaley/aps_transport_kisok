@@ -31,10 +31,12 @@ class CompanyManagementTest extends TestCase
             ->set('name', 'Access Platform Services')
             ->set('code', 'APS')
             ->set('document_prefix', 'APS')
+            ->set('headOffice', ['site_name' => 'Head Office', 'site_address_line_1' => '1 Main Street', 'site_address_line_2' => null, 'site_town' => 'Peterborough', 'site_county' => null, 'site_postcode' => 'PE1 1AA'])
             ->call('save')
             ->assertHasNoErrors();
 
         $company = Company::where('code', 'APS')->firstOrFail();
+        $this->assertSame('Head Office', $company->homeSite->name);
 
         Livewire::actingAs($admin)->test('pages::settings.companies.form', ['company' => $company])
             ->set('name', 'APS Ltd')
