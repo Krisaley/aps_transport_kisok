@@ -37,4 +37,20 @@ class CustomerWorkflowTest extends TestCase
         $this->assertEqualsCanonicalizing([$head->id, $depot->id], $customer->sites()->pluck('sites.id')->all());
         $this->assertSame([$equipment->id], $customer->equipment()->pluck('equipment.id')->all());
     }
+
+    public function test_customer_update_page_loads_all_management_tabs(): void
+    {
+        $company = Company::create(['code' => 'APS', 'name' => 'APS', 'document_prefix' => 'APS', 'is_active' => true]);
+        $role = Role::create(['name' => 'Super-Admin', 'guard_name' => 'web', 'is_active' => true]);
+        $user = User::factory()->create(['company_id' => $company->id, 'is_active' => true]);
+        $user->assignRole($role);
+        $customer = Customer::create(['company_id' => $company->id, 'name' => 'Customer', 'account_number' => 'C1']);
+
+        Livewire::actingAs($user)->test('pages::crm.customers.update', ['customer' => $customer])
+            ->assertOk()
+            ->assertSee('Basic Details')
+            ->assertSee('Addresses')
+            ->assertSee('Equipment')
+            ->assertSee('Movements');
+    }
 }
