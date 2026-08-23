@@ -100,4 +100,29 @@ class MovementFormTest extends TestCase
         $this->assertStringContainsString('Site 1', $html);
         $this->assertStringContainsString('Site 2', $html);
     }
+
+    public function test_manual_equipment_line_saves_without_an_equipment_foreign_key(): void
+    {
+        $company = Company::create(['code' => 'APS', 'name' => 'APS', 'document_prefix' => 'APS', 'is_active' => true]);
+        $role = Role::create(['name' => 'Super-Admin', 'guard_name' => 'web', 'is_active' => true]);
+        $user = User::factory()->create(['company_id' => $company->id, 'is_active' => true]);
+        $user->assignRole($role);
+        $customer = Customer::create(['company_id' => $company->id, 'account_number' => 'C1', 'name' => 'Customer']);
+        $depot = Site::create(['company_id' => $company->id, 'name' => 'Depot', 'address_line_1' => 'Depot Road', 'postcode' => 'PE1']);
+        $destination = Site::create(['company_id' => $company->id, 'customer_id' => $customer->id, 'name' => 'Customer site', 'address_line_1' => 'Site Road', 'postcode' => 'PE2']);
+        $company->update(['home_site_id' => $depot->id]);
+
+        Livewire::actingAs($user)->test('pages::operations.movements.form')
+            ->set('customer_id', $customer->id)
+            ->set('reference', 'MOV-MANUAL')
+            ->set('items.0.equipment_id', '')
+            ->set('items.0.description', 'Customer machine')
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('operations.movements.index'));
+
+        $item = Movement::where('reference', 'MOV-MANUAL')->firstOrFail()->items()->firstOrFail();
+        $this->assertNull($item->equipment_id);
+        $this->assertSame($destination->id, $item->deliveryAction->site_id);
+    }
 }

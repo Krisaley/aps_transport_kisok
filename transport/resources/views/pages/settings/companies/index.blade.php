@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Company;
+use App\Support\CurrentCompany;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -13,12 +15,21 @@ new #[Title('Companies')] class extends Component {
     public ?int $deleteCompanyId = null;
     public ?string $deleteCompanyName = null;
 
+    private function accessibleCompanies(): \Illuminate\Database\Eloquent\Builder
+    {
+        $user = Auth::user();
+
+        return Company::query()->when(! $user->hasRole('Super-Admin'), function ($query) use ($user) {
+            $query->where(fn ($query) => $query->whereKey($user->company_id)->orWhereHas('users', fn ($query) => $query->whereKey($user->id)));
+        });
+    }
+
     public function updatedSearch(): void { $this->resetPage(); }
 
     public function confirmDelete(int $companyId): void
     {
         Gate::authorize('admin.company.delete');
-        $company = Company::findOrFail($companyId);
+        $company = $this->accessibleCompanies()->findOrFail($companyId);
         $this->deleteCompanyId = $company->id;
         $this->deleteCompanyName = $company->name;
         Flux::modal('delete-company')->show();
@@ -27,7 +38,7 @@ new #[Title('Companies')] class extends Component {
     public function deleteCompany(): void
     {
         Gate::authorize('admin.company.delete');
-        $company = Company::withCount(['movements', 'users'])->findOrFail($this->deleteCompanyId);
+        $company = $this->accessibleCompanies()->withCount(['movements', 'users'])->findOrFail($this->deleteCompanyId);
         $references = collect([
             'movements' => $company->movements_count,
             'assigned users' => $company->users_count,
@@ -51,7 +62,7 @@ new #[Title('Companies')] class extends Component {
 
     public function with(): array
     {
-        return ['companies' => Company::query()->with('homeSite')->withCount(['users', 'movements'])
+        return ['companies' => $this->accessibleCompanies()->with('homeSite')->withCount(['users', 'movements'])
             ->when($this->search !== '', fn ($query) => $query->where(fn ($query) => $query->where('name', 'like', '%'.$this->search.'%')->orWhere('code', 'like', '%'.$this->search.'%')))
             ->orderBy('name')->paginate(10)];
     }

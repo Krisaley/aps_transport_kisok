@@ -12,10 +12,17 @@ class Equipment extends Model
     use HasActivityLog;
 
     protected $fillable = [
+        'company_id',
         'model_id',
         'stock_number',
         'serial_number',
     ];
+
+    /** @return BelongsTo<Company, $this> */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
 
     /** @return BelongsTo<EquipmentModel, $this> */
     public function equipmentModel(): BelongsTo

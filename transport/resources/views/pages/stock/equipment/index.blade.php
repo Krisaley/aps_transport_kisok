@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Equipment;
+use App\Support\CurrentCompany;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -9,9 +11,9 @@ new #[Title('Equipment')] class extends Component {
     use WithPagination;
     public string $search = '';
     public function updatedSearch(): void { $this->resetPage(); }
-    public function with(): array
+    public function with(CurrentCompany $currentCompany): array
     {
-        return ['equipment' => Equipment::query()->with('equipmentModel.make')
+        return ['equipment' => Equipment::query()->where('company_id', $currentCompany->id(Auth::user()))->with('equipmentModel.make')
             ->when($this->search !== '', fn ($query) => $query->where(fn ($query) => $query->where('stock_number', 'like', '%'.$this->search.'%')->orWhere('serial_number', 'like', '%'.$this->search.'%')->orWhereHas('equipmentModel', fn ($query) => $query->where('name', 'like', '%'.$this->search.'%'))))
             ->orderBy('stock_number')->paginate(10)];
     }

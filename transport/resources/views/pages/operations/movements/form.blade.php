@@ -109,11 +109,11 @@ new #[Title('Movement')] class extends Component {
             foreach ($this->items as &$item) { $item['accessories'] = is_array($item['accessories'] ?? null) ? $item['accessories'] : []; $item['quantity'] ??= 1; }
         }
         if ($key && str_ends_with($key, '.leg') && $this->movement_type === 'exchange') {
-            $index = (int) str($key)->before('.');
+            $index = (int) (string) str($key)->before('.');
             $this->assignItemRoute($index);
         }
         if ($key && str_ends_with($key,'.equipment_id')) {
-            $index=(int)str($key)->before('.');
+            $index=(int) (string) str($key)->before('.');
             $this->fillEquipment($index,$value);
         }
     }
@@ -227,6 +227,11 @@ new #[Title('Movement')] class extends Component {
         Gate::authorize($this->movement ? 'operations.movement.update' : 'operations.movement.create');
         abort_unless((int) $this->company_id === $currentCompany->id(Auth::user()), 403);
         foreach($this->actions as &$action){$action['driver_id']=$this->driver_id;$action['vehicle_id']=$this->vehicle_id;}
+        foreach ($this->items as &$item) {
+            $item['equipment_id'] = filled($item['equipment_id'] ?? null) ? (int) $item['equipment_id'] : null;
+            $item['stock_number'] = filled($item['stock_number'] ?? null) ? $item['stock_number'] : null;
+            $item['serial_number'] = filled($item['serial_number'] ?? null) ? $item['serial_number'] : null;
+        }
 
         $data = $this->validate([
             'company_id' => ['required', 'exists:companies,id'],
