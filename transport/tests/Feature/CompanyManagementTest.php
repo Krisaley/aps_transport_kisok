@@ -46,6 +46,37 @@ class CompanyManagementTest extends TestCase
         $this->assertSame('APS Ltd', $company->fresh()->name);
     }
 
+    public function test_new_company_is_active_by_default_and_next_advances(): void
+    {
+        $admin = $this->admin();
+
+        Livewire::actingAs($admin)->test('pages::settings.companies.form')
+            ->assertSet('is_active', true)
+            ->set('name', 'Access Platform Sales')
+            ->set('code', 'APS')
+            ->call('next')
+            ->assertHasNoErrors()
+            ->assertSet('step', 2);
+    }
+
+    public function test_company_details_can_be_updated_when_hidden_branding_is_incomplete(): void
+    {
+        $admin = $this->admin();
+        $company = Company::create([
+            'name' => 'APS',
+            'code' => 'APS',
+            'document_prefix' => '',
+            'is_active' => true,
+        ]);
+
+        Livewire::actingAs($admin)->test('pages::settings.companies.form', ['company' => $company])
+            ->set('name', 'Access Platform Sales')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame('Access Platform Sales', $company->fresh()->name);
+    }
+
     public function test_user_default_company_must_be_an_assigned_company(): void
     {
         $admin = $this->admin();
