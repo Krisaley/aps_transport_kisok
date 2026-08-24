@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Concerns\HasActivityLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Equipment extends Model
@@ -16,6 +17,7 @@ class Equipment extends Model
         'model_id',
         'stock_number',
         'serial_number',
+        'fleet_number',
     ];
 
     /** @return BelongsTo<Company, $this> */
@@ -28,6 +30,12 @@ class Equipment extends Model
     public function equipmentModel(): BelongsTo
     {
         return $this->belongsTo(EquipmentModel::class, 'model_id');
+    }
+
+    /** @return BelongsToMany<Customer, $this> */
+    public function customers(): BelongsToMany
+    {
+        return $this->belongsToMany(Customer::class, 'customer_equipment');
     }
 
     /** @return HasMany<MovementItem, $this> */

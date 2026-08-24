@@ -91,6 +91,16 @@ new #[Title('Movement')] class extends Component {
         $this->reference = 'MOV-'.now()->format('Ymd-His');
         $this->applyStandardRoute();
         $this->addItem();
+        $equipmentId = request()->integer('equipment');
+        if ($equipmentId) {
+            $equipment = Equipment::where('company_id', $this->company_id)->find($equipmentId);
+            if ($equipment) {
+                $this->customer_id = $equipment->customers()->where('company_id', $this->company_id)->value('customers.id');
+                $this->applyStandardRoute();
+                $this->items[0]['equipment_id'] = $equipment->id;
+                $this->fillEquipment(0, $equipment->id);
+            }
+        }
     }
 
     public function updatedMovementType(): void
