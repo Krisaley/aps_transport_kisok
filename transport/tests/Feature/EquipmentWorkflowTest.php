@@ -9,6 +9,7 @@ use App\Models\EquipmentModel;
 use App\Models\Make;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\CurrentCompany;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -57,12 +58,11 @@ class EquipmentWorkflowTest extends TestCase
         $this->assertTrue($equipment->customers()->whereKey($customer->id)->exists());
     }
 
-    public function test_owner_transfer_is_tenant_safe_and_tenant_stock_has_no_customer_owner(): void
+    public function test_owner_can_transfer_to_any_customer_or_tenant(): void
     {
         $company = Company::create(['code' => 'APS', 'name' => 'APS', 'document_prefix' => 'APS', 'is_active' => true]);
         $otherCompany = Company::create(['code' => 'OTHER', 'name' => 'Other', 'document_prefix' => 'OTHER', 'is_active' => true]);
         $user = $this->admin($company);
-        $customer = Customer::create(['company_id' => $company->id, 'account_number' => 'C1', 'name' => 'Acme']);
         $otherCustomer = Customer::create(['company_id' => $otherCompany->id, 'account_number' => 'C2', 'name' => 'Other Customer']);
         $equipment = $this->equipment($company);
 
@@ -71,20 +71,22 @@ class EquipmentWorkflowTest extends TestCase
             ->set('ownerType', 'customer')
             ->set('ownerCustomerId', $otherCustomer->id)
             ->call('saveOwner')
-            ->assertHasErrors('ownerCustomerId')
-            ->set('ownerCustomerId', $customer->id)
-            ->call('saveOwner')
             ->assertHasNoErrors();
 
-        $this->assertTrue($equipment->customers()->whereKey($customer->id)->exists());
+        $this->assertSame($otherCompany->id, $equipment->fresh()->company_id);
+        $this->assertTrue($equipment->customers()->whereKey($otherCustomer->id)->exists());
 
+        $user->update(['company_id' => $otherCompany->id]);
+        session([CurrentCompany::SESSION_KEY => $otherCompany->id]);
         Livewire::actingAs($user)->test('pages::stock.equipment.index')
             ->set('transferEquipmentId', $equipment->id)
             ->set('ownerType', 'tenant')
+            ->set('ownerCompanyId', $company->id)
             ->call('saveOwner')
             ->assertHasNoErrors();
 
-        $this->assertFalse($equipment->customers()->exists());
+        $this->assertSame($company->id, $equipment->fresh()->company_id);
+        $this->assertFalse($equipment->fresh()->customers()->exists());
     }
 
     public function test_index_searches_make_model_and_customer_and_shows_expected_actions(): void
@@ -96,9 +98,9 @@ class EquipmentWorkflowTest extends TestCase
         $equipment->customers()->attach($customer);
 
         Livewire::actingAs($user)->test('pages::stock.equipment.index')
-            ->set('search', 'JLG 450AJ')
+            ->set('search', 'jlg 450aj')
             ->assertSee($equipment->stock_number)
-            ->set('search', 'Acme')
+            ->set('search', 'ACME')
             ->assertSee($equipment->stock_number)
             ->assertSee('Transfer owner')
             ->assertSee('Raise movement');

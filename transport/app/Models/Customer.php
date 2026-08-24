@@ -20,6 +20,12 @@ class Customer extends Model
         'home_site_id',
     ];
 
+    /** @return BelongsTo<Company, $this> */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
     /** @return BelongsTo<Site, $this> */
     public function homeSite(): BelongsTo
     {
