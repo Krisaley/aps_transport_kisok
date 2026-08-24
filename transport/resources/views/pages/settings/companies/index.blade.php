@@ -38,21 +38,7 @@ new #[Title('Companies')] class extends Component {
     public function deleteCompany(): void
     {
         Gate::authorize('admin.company.delete');
-        $company = $this->accessibleCompanies()->withCount(['movements', 'users'])->findOrFail($this->deleteCompanyId);
-        $references = collect([
-            'movements' => $company->movements_count,
-            'assigned users' => $company->users_count,
-            'default users' => $company->hasMany(\App\Models\User::class)->count(),
-            'customers' => $company->hasMany(\App\Models\Customer::class)->count(),
-            'sites' => $company->hasMany(\App\Models\Site::class)->count(),
-            'vehicles' => $company->hasMany(\App\Models\Vehicle::class)->count(),
-        ])->filter();
-
-        if ($references->isNotEmpty()) {
-            $this->addError('deleteCompany', 'This tenant cannot be deleted while it has '.$references->map(fn ($count, $label) => "{$count} {$label}")->join(', ').'. Reassign or remove those records first.');
-            return;
-        }
-
+        $company = $this->accessibleCompanies()->findOrFail($this->deleteCompanyId);
         abort_if(Company::where('is_active', true)->count() <= 1 && $company->is_active, 422, 'The final active tenant cannot be deleted.');
         $company->delete();
         $this->reset(['deleteCompanyId', 'deleteCompanyName']);
@@ -93,6 +79,6 @@ new #[Title('Companies')] class extends Component {
                 </flux:table.rows>
             </flux:table>
         </div>
-        <flux:modal name="delete-company" class="min-w-[28rem]"><div class="space-y-5"><div><flux:heading size="lg">Delete {{ $deleteCompanyName }}?</flux:heading><flux:text class="mt-2">Only an empty tenant can be permanently deleted.</flux:text></div><flux:error name="deleteCompany"/><div class="flex justify-end gap-2"><flux:modal.close><flux:button variant="ghost">Cancel</flux:button></flux:modal.close><flux:button variant="danger" wire:click="deleteCompany">Delete company</flux:button></div></div></flux:modal>
+        <flux:modal name="delete-company" class="min-w-[28rem]"><div class="space-y-5"><div><flux:heading size="lg">Delete {{ $deleteCompanyName }}?</flux:heading><flux:text class="mt-2">The tenant will be removed from active use, while its records are retained.</flux:text></div><flux:error name="deleteCompany"/><div class="flex justify-end gap-2"><flux:modal.close><flux:button variant="ghost">Cancel</flux:button></flux:modal.close><flux:button variant="danger" wire:click="deleteCompany">Delete company</flux:button></div></div></flux:modal>
     </x-pages::settings.layout>
 </section>

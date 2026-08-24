@@ -6,9 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Company extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = ['code', 'name', 'trading_name', 'address', 'home_site_id', 'email', 'phone', 'document_prefix', 'registration_number', 'vat_number', 'next_document_number', 'logo_path', 'brand_primary_color', 'is_active'];
 
     /** @return BelongsTo<Site, $this> */

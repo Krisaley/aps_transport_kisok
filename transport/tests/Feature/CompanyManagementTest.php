@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Role;
+use App\Models\Site;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -120,17 +121,36 @@ class CompanyManagementTest extends TestCase
         $this->assertEqualsCanonicalizing([$first->id, $second->id], $user->companies()->pluck('companies.id')->all());
     }
 
-    public function test_company_with_tenant_data_cannot_be_deleted(): void
+    public function test_company_with_tenant_data_is_soft_deleted(): void
     {
         $admin = $this->admin();
         $company = Company::create(['name' => 'APS', 'code' => 'APS', 'document_prefix' => 'APS', 'is_active' => true]);
+        Company::create(['name' => 'APSR', 'code' => 'APSR', 'document_prefix' => 'APSR', 'is_active' => true]);
         Customer::create(['company_id' => $company->id, 'account_number' => 'C1', 'name' => 'Customer']);
 
         Livewire::actingAs($admin)->test('pages::settings.companies.index')
             ->set('deleteCompanyId', $company->id)
             ->call('deleteCompany')
-            ->assertHasErrors('deleteCompany');
+            ->assertHasNoErrors();
 
-        $this->assertDatabaseHas('companies', ['id' => $company->id]);
+        $this->assertSoftDeleted('companies', ['id' => $company->id]);
+        $this->assertDatabaseHas('customers', ['company_id' => $company->id]);
+    }
+
+    public function test_saved_depot_can_be_removed_without_deleting_the_shared_site(): void
+    {
+        $admin = $this->admin();
+        $company = Company::create(['name' => 'APS', 'code' => 'APS', 'document_prefix' => 'APS', 'is_active' => true]);
+        $headOffice = Site::create(['name' => 'Head Office', 'address_line_1' => '1 Main Street', 'postcode' => 'PE1 1AA']);
+        $depot = Site::create(['name' => 'Depot', 'address_line_1' => '2 Main Street', 'postcode' => 'PE1 1AB']);
+        $company->sites()->attach([$headOffice->id, $depot->id]);
+        $company->update(['home_site_id' => $headOffice->id]);
+
+        Livewire::actingAs($admin)->test('pages::settings.companies.form', ['company' => $company])
+            ->call('detachDepot', $depot->id)
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseMissing('company_site', ['company_id' => $company->id, 'site_id' => $depot->id]);
+        $this->assertDatabaseHas('sites', ['id' => $depot->id]);
     }
 }
