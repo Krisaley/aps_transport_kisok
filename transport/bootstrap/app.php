@@ -17,6 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Requests always reach PHP through the Nginx container. Trust only that
+        // immediate proxy so Cloudflare's forwarded HTTPS scheme is honoured.
+        $middleware->trustProxies(at: 'REMOTE_ADDR');
+
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,

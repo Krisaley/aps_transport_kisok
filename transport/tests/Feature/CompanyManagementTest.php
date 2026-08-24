@@ -77,6 +77,31 @@ class CompanyManagementTest extends TestCase
         $this->assertSame('Access Platform Sales', $company->fresh()->name);
     }
 
+    public function test_livewire_update_url_uses_forwarded_https_scheme(): void
+    {
+        $admin = $this->admin();
+        $company = Company::create([
+            'name' => 'APS',
+            'code' => 'APS',
+            'document_prefix' => 'APS',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->withServerVariables(['REMOTE_ADDR' => '10.0.0.10'])
+            ->withHeaders([
+                'X-Forwarded-Host' => 'transport.krisaley.co.uk',
+                'X-Forwarded-Proto' => 'https',
+            ])
+            ->get("/settings/companies/{$company->id}/update");
+
+        $response->assertOk();
+        $this->assertMatchesRegularExpression(
+            '/data-update-uri="https:\/\/transport\.krisaley\.co\.uk\/livewire-[^"]+\/update"/',
+            $response->getContent(),
+        );
+    }
+
     public function test_user_default_company_must_be_an_assigned_company(): void
     {
         $admin = $this->admin();
